@@ -33,6 +33,10 @@ if (RhythmGame_USE_MIMALLOC)
     find_package(mimalloc CONFIG REQUIRED)
 endif ()
 
+# <------------ libarchive (song package extraction) --------------->
+
+find_package(LibArchive REQUIRED)
+
 # <------------ LibXml2 (html parsing) --------------->
 
 find_package(LibXml2 REQUIRED)
@@ -213,6 +217,8 @@ qt_add_library(RhythmGame_lib OBJECT
         src/gameplay_logic/rules/Lr2Gauge.h
         src/resource_managers/SongDbScanner.cpp
         src/resource_managers/SongDbScanner.h
+        src/resource_managers/SongDownloader.cpp
+        src/resource_managers/SongDownloader.h
         src/resource_managers/SongAssetStore.cpp
         src/resource_managers/SongAssetStore.h
         src/resource_managers/SongAssetImageProvider.cpp
@@ -408,7 +414,7 @@ if (NOT Stb_FOUND)
 else ()
     target_link_libraries(RhythmGame_lib PUBLIC ${Stb_LIBRARIES})
 endif ()
-target_link_libraries(RhythmGame_lib PUBLIC SDL2::SDL2 libremidi Qt6Keychain::Qt6Keychain Qt6::Quick Qt6::QuickControls2 Qt6::OpenGL Qt6::Concurrent Qt6::Multimedia Qt6::WebSockets Threads::Threads Boost::headers SQLiteCpp spdlog::spdlog_header_only foonathan::lexy magic_enum::magic_enum Iconv::Iconv libzip::zip ZLIB::ZLIB $<IF:$<TARGET_EXISTS:zstd::libzstd_static>,zstd::libzstd_static,zstd::libzstd> LibXml2::LibXml2 zlib-ng::zlib)
+target_link_libraries(RhythmGame_lib PUBLIC SDL2::SDL2 libremidi Qt6Keychain::Qt6Keychain Qt6::Quick Qt6::QuickControls2 Qt6::OpenGL Qt6::Concurrent Qt6::Multimedia Qt6::WebSockets Threads::Threads Boost::headers SQLiteCpp spdlog::spdlog_header_only foonathan::lexy magic_enum::magic_enum Iconv::Iconv libzip::zip ZLIB::ZLIB $<IF:$<TARGET_EXISTS:zstd::libzstd_static>,zstd::libzstd_static,zstd::libzstd> LibXml2::LibXml2 zlib-ng::zlib LibArchive::LibArchive)
 target_include_directories(RhythmGame_lib PUBLIC ${MINIAUDIO_INCLUDE_DIRS})
 
 if (WIN32)

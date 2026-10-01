@@ -16,8 +16,9 @@ Rg::Rg(
   input::GamepadManager* gamepadManager,
   qml_components::ProfileList* profileList,
   arena::ArenaSession* arenaSession,
-  arena::ArenaSession* arenaDirectorySession,
-  resource_managers::Tables* tables,
+   arena::ArenaSession* arenaDirectorySession,
+   resource_managers::Tables* tables,
+   resource_managers::SongDownloader* songDownloader,
   resource_managers::Languages* languages,
   sounds::AudioEngine* audioEngine,
   qml_components::OnlineScores* onlineScores,
@@ -36,7 +37,8 @@ Rg::Rg(
   , profileList(profileList)
   , arenaSession(arenaSession)
   , arenaDirectorySession(arenaDirectorySession)
-  , tables(tables)
+   , tables(tables)
+   , songDownloader(songDownloader)
   , languages(languages)
   , audioEngine(audioEngine)
   , onlineScores(onlineScores)

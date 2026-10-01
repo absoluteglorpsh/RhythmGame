@@ -38,6 +38,7 @@
   gdb,
   catch2_3,
   stdenv,
+  libarchive,
   openimageio,
   libwebp,
   libtiff,
@@ -86,6 +87,7 @@ mkShell {
     zlib
     zlib-ng
     libremidi
+    libarchive
   ];
 
   nativeBuildInputs = [

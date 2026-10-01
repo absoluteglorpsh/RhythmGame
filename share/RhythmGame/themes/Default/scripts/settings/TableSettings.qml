@@ -25,7 +25,13 @@ Item {
     readonly property int installedPaneMinimumWidth: 360
     readonly property int installedPaneRowMinimumWidth: 560
 
-    Component.onCompleted: fetchTables()
+    Component.onCompleted: {
+        fetchTables()
+        const saved = Rg.profileList?.mainProfile?.vars?.generalVars?.downloadSource
+        if (saved && Rg.songDownloader.availableSources().includes(saved)) {
+            Rg.songDownloader.source = saved
+        }
+    }
     Component.onDestruction: cancelFetch()
 
     readonly property var tagTranslations: ({
@@ -46,6 +52,36 @@ Item {
 
     function translateTag(tag) {
         return tagTranslations[tag] ?? tag
+    }
+
+    function downloadStatusText(status) {
+        switch (status) {
+        case downloadTask.Prepare:
+            return qsTr("Queued")
+        case downloadTask.Downloading:
+            return qsTr("Downloading")
+        case downloadTask.Downloaded:
+            return qsTr("Downloaded")
+        case downloadTask.Extracting:
+            return qsTr("Extracting")
+        case downloadTask.Finished:
+            return qsTr("Finished")
+        case downloadTask.Error:
+            return qsTr("Error")
+        default:
+            return ""
+        }
+    }
+
+    function downloadAllMissingFromTables() {
+        for (const installed of Rg.tables.getList()) {
+            if (installed.status !== table.Loaded) {
+                continue
+            }
+            for (const lvl of installed.levels) {
+                Rg.songDownloader.submitEntries(lvl.entries)
+            }
+        }
     }
 
     function currentTableListUrl() {
@@ -485,6 +521,85 @@ Item {
         }
     }
 
+    // ── Downloads: task delegate ─────────────────────────────────────────
+
+    Component {
+        id: downloadTaskDelegate
+
+        Rectangle {
+            required property var display
+            required property int index
+
+            width: ListView.view.width
+            height: taskRow.implicitHeight + 12
+            clip: true
+
+            color: index % 2 === 0 ? palette.base : palette.alternateBase
+
+            RowLayout {
+                id: taskRow
+                anchors {
+                    left: parent.left; right: parent.right
+                    verticalCenter: parent.verticalCenter
+                    margins: 8
+                }
+                spacing: 8
+
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    Layout.minimumWidth: 0
+                    spacing: 2
+
+                    Label {
+                        text: display.name
+                        font.bold: true
+                        elide: Text.ElideRight
+                        Layout.fillWidth: true
+                        Layout.minimumWidth: 0
+                    }
+
+                    Label {
+                        visible: display.status === downloadTask.Error
+                        text: display.errorMessage
+                        elide: Text.ElideRight
+                        font.pixelSize: 11
+                        color: SettingsColors.dangerText(palette)
+                        Layout.fillWidth: true
+                        Layout.minimumWidth: 0
+                    }
+
+                    ProgressBar {
+                        visible: display.status === downloadTask.Downloading
+                            || display.status === downloadTask.Downloaded
+                            || display.status === downloadTask.Extracting
+                        Layout.fillWidth: true
+                        from: 0
+                        to: Math.max(1, display.totalBytes)
+                        value: display.bytesReceived
+                        indeterminate: display.totalBytes <= 0
+                    }
+                }
+
+                Label {
+                    text: tableSettings.downloadStatusText(display.status)
+                    font.pixelSize: 11
+                    color: SettingsColors.alpha(palette.text, 0.7)
+                }
+
+                ActionButton {
+                    visible: display.status === downloadTask.Error
+                    text: qsTr("Retry")
+                    tone: ActionButton.Secondary
+                    onClicked: Rg.songDownloader.retry(index)
+                }
+                Rectangle {
+                    Layout.preferredWidth: 5
+                    color: "transparent"
+                }
+            }
+        }
+    }
+
     // ── Main layout: side-by-side split ───────────────────────────────────
 
     SettingsWorkspaceScaffold {
@@ -803,6 +918,66 @@ Item {
                         }
                     }
                 }
+            }
+        }
+
+        // ── Song downloads ───────────────────────────────────────────────
+
+        WorkbenchPanel {
+            title: qsTr("Song downloads")
+            subtitle: qsTr("Fetch missing table songs through a package service. Archives extract into the managed downloads folder, which rescans automatically.")
+            Layout.fillWidth: true
+            Layout.preferredHeight: 320
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 8
+
+                Label { text: qsTr("Service:") }
+
+                ComboBox {
+                    id: downloadSourceBox
+
+                    model: Rg.songDownloader.availableSources()
+                    currentIndex: Math.max(0, model.indexOf(Rg.songDownloader.source))
+                    onActivated: {
+                        const name = model[currentIndex]
+                        Rg.songDownloader.source = name
+                        Rg.profileList.mainProfile.vars.generalVars.downloadSource = name
+                    }
+                }
+
+                Item {
+                    Layout.fillWidth: true
+                }
+
+                ActionButton {
+                    text: qsTr("Download all missing")
+                    tone: ActionButton.Primary
+                    ToolTip.text: qsTr("Queue downloads for every missing song in the installed tables")
+                    ToolTip.visible: hovered
+                    ToolTip.delay: 500
+                    onClicked: tableSettings.downloadAllMissingFromTables()
+                }
+            }
+
+            Label {
+                visible: Rg.songDownloader.count === 0
+                Layout.fillWidth: true
+                text: qsTr("No downloads yet. Open a table in song select and press Download on a missing song, or use Download all missing above.")
+                wrapMode: Text.WordWrap
+                color: SettingsColors.alpha(palette.text, 0.7)
+            }
+
+            ListView {
+                visible: Rg.songDownloader.count > 0
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                clip: true
+                spacing: 0
+                model: Rg.songDownloader
+                delegate: downloadTaskDelegate
+                ScrollBar.vertical: ScrollBar {}
             }
         }
     }
