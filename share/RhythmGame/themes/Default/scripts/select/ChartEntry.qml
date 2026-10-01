@@ -15,6 +15,7 @@ Image {
     property bool scrollingText: false
     property bool isCurrentItem: false
     readonly property bool isCourse: modelData instanceof course
+    readonly property bool isMissing: modelData instanceof entry
     readonly property bool arenaSeated: Rg.arenaSession.state === ArenaSession.InRoom
         || Rg.arenaSession.state === ArenaSession.Reconnecting
     readonly property int arenaAvailability: {
@@ -107,7 +108,44 @@ Image {
         onClicked: {
             pathView.forceActiveFocus();
             pathView.setNavigationImmediate(index);
-            pathView.controller.goForward(modelData);
+            // Attempting to open a missing table song starts its download,
+            // mirroring endlessdream's in-game downloader.
+            if (image.isMissing) {
+                Rg.songDownloader.submitMd5(modelData.md5, modelData.title || "");
+                return;
+            }
+            Qt.callLater(() => pathView.controller.goForward(modelData));
         }
+    }
+    Rectangle {
+        id: downloadChip
+
+        visible: image.isMissing
+        anchors.right: parent.right
+        anchors.rightMargin: 8
+        anchors.verticalCenter: parent.verticalCenter
+        width: downloadLabel.implicitWidth + 20
+        height: 36
+        radius: 6
+        color: palette.highlight
+
+        Text {
+            id: downloadLabel
+
+            anchors.centerIn: parent
+            text: qsTr("Download")
+            color: palette.highlightedText
+            font.pixelSize: 14
+        }
+        MouseArea {
+            anchors.fill: parent
+            onClicked: (mouse) => {
+                mouse.accepted = true;
+                pathView.forceActiveFocus();
+                pathView.setNavigationImmediate(index);
+                Rg.songDownloader.submitMd5(modelData.md5, modelData.title || "");
+            }
+        }
+    }
     }
 }

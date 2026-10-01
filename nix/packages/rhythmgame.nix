@@ -28,6 +28,7 @@
   stb,
   pkg-config,
   tbb,
+  libarchive,
   miniaudio,
   flac,
   libogg,
@@ -91,6 +92,7 @@ stdenv.mkDerivation rec {
     zlib
     zlib-ng
     libremidi
+    libarchive
   ];
 
   cmakeFlags = [

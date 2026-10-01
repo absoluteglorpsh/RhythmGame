@@ -19,7 +19,8 @@ PathView {
 
         enabled: pathView.enabled
         minimumEntryCount: pathView.pathItemCount
-        tryAutoplayAction: () => root.openSelectedAutoplay()
+        tryAutoplayAction: () => root.downloadSelectedEntry()
+            || root.openSelectedAutoplay()
             || selectController.goForward(pathView.current)
         tryReplayAction: () => root.openSelectedReplay(Qt.LeftButton)
             || selectController.goForward(pathView.current)

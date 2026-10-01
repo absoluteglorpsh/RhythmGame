@@ -41,6 +41,7 @@
 #include "resource_managers/Languages.h"
 #include "resource_managers/ScanThemes.h"
 #include "resource_managers/Tables.h"
+#include "resource_managers/SongDownloader.h"
 #include "support/PathToUtfString.h"
 #include "support/UtfStringToPath.h"
 #include "gameplay_logic/ChartRunner.h"
@@ -196,6 +197,11 @@ createStandardDirectories()
     if (ec) {
         spdlog::error("Could not create tables folder: {}", ec.message());
         throw std::runtime_error("Could not create tables folder");
+    }
+    std::filesystem::create_directories(base / "downloads", ec);
+    if (ec) {
+        spdlog::error("Could not create downloads folder: {}", ec.message());
+        throw std::runtime_error("Could not create downloads folder");
     }
     std::filesystem::create_directories(base / "themes", ec);
     if (ec) {
@@ -512,6 +518,30 @@ main(int argc, [[maybe_unused]] char* argv[]) -> int
                                                  dataFolder / "tables",
                                                  &db };
 
+        auto songDownloader = resource_managers::SongDownloader{
+            &networkManager, dataFolder / "downloads", &db
+        };
+        // Keep the managed downloads folder registered as a song root and
+        // rescan it after every extraction, mirroring the reference
+        // main.updateSong(downloadDir, true) step.
+        QObject::connect(
+          &songDownloader,
+          &resource_managers::SongDownloader::extractionFinished,
+          &folders,
+          [&](const QString& path) {
+              folders.add(path);
+              const auto canonical = path.endsWith('/') ? path : path + '/';
+              for (auto i = 0; i < folders.rowCount(); ++i) {
+                  const auto* folder =
+                    folders.at(i).value<qml_components::RootSongFolder*>();
+                  if (folder != nullptr && folder->getName() == canonical) {
+                      scanningQueue.scan(
+                        const_cast<qml_components::RootSongFolder*>(folder));
+                      break;
+                  }
+              }
+          });
+
         auto onlineScores = qml_components::OnlineScores{ &networkManager };
 
         auto engine = QQmlApplicationEngine{};
@@ -555,6 +585,7 @@ main(int argc, [[maybe_unused]] char* argv[]) -> int
                       &arenaSession,
                       &arenaDirectorySession,
                       &tables,
+                      &songDownloader,
                       &languages,
                       &audioEngine,
                       &onlineScores,
@@ -579,6 +610,8 @@ main(int argc, [[maybe_unused]] char* argv[]) -> int
           "RhythmGameQml", 1, 0, "tableQueryResult");
         qmlRegisterType<resource_managers::TableInfo>(
           "RhythmGameQml", 1, 0, "tableInfo");
+        qmlRegisterType<resource_managers::DownloadTask>(
+          "RhythmGameQml", 1, 0, "downloadTask");
         qmlRegisterType<gameplay_logic::ChartRunner>(
           "RhythmGameQml", 1, 0, "ChartRunner");
         qmlRegisterType<gameplay_logic::CourseRunner>(

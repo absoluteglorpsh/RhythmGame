@@ -14,6 +14,7 @@
 #include "input/InputTranslator.h"
 #include "sounds/AudioEngine.h"
 #include "resource_managers/Languages.h"
+#include "resource_managers/SongDownloader.h"
 #include "resource_managers/Tables.h"
 #include "resource_managers/SongAssetStore.h"
 #include "qml_components/OnlineScores.h"
@@ -59,6 +60,8 @@ class Rg final : public QObject
     Q_PROPERTY(arena::ArenaSession* arenaDirectorySession MEMBER
                  arenaDirectorySession CONSTANT FINAL)
     Q_PROPERTY(resource_managers::Tables* tables MEMBER tables CONSTANT FINAL)
+    Q_PROPERTY(resource_managers::SongDownloader* songDownloader MEMBER
+                 songDownloader CONSTANT FINAL)
     Q_PROPERTY(
       resource_managers::Languages* languages MEMBER languages CONSTANT FINAL)
     Q_PROPERTY(
@@ -81,6 +84,7 @@ class Rg final : public QObject
     arena::ArenaSession* arenaSession;
     arena::ArenaSession* arenaDirectorySession;
     resource_managers::Tables* tables;
+    resource_managers::SongDownloader* songDownloader;
     resource_managers::Languages* languages;
     sounds::AudioEngine* audioEngine;
     qml_components::OnlineScores* onlineScores;
@@ -99,8 +103,9 @@ class Rg final : public QObject
        input::GamepadManager* gamepadManager,
        qml_components::ProfileList* profileList,
        arena::ArenaSession* arenaSession,
-       arena::ArenaSession* arenaDirectorySession,
-       resource_managers::Tables* tables,
+        arena::ArenaSession* arenaDirectorySession,
+        resource_managers::Tables* tables,
+        resource_managers::SongDownloader* songDownloader,
        resource_managers::Languages* languages,
        sounds::AudioEngine* audioEngine,
        qml_components::OnlineScores* onlineScores,

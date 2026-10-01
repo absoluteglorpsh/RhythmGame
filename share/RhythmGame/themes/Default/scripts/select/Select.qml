@@ -178,6 +178,20 @@ FocusScope {
             return songList.controller.showAllChartsForCurrentSong();
         }
 
+        function downloadSelectedEntry() {
+            let target = songList.current;
+            if (!(target instanceof entry)) {
+                return false;
+            }
+            Rg.songDownloader.submitMd5(target.md5, target.title || "");
+            return true;
+        }
+
+        function downloadAllMissing() {
+            Rg.songDownloader.submitEntries(songList.folderContents || []);
+            return true;
+        }
+
         function cycleSortMode(delta) {
             sortButton.cycle(delta === undefined ? 1 : delta);
             return true;
@@ -208,6 +222,8 @@ FocusScope {
                 return toggleDetailOptions();
             case 6:
                 return openKeyConfig();
+            case 7:
+                return downloadAllMissing();
             case 8:
                 return showAllChartsForCurrentSong();
             case 9:
@@ -585,6 +601,13 @@ FocusScope {
 
                 target: songList
             }
+            Connections {
+                target: Rg.songDownloader
+
+                function onExtractionFinished() {
+                    songList.controller.refresh();
+                }
+            }
             Timer {
                 id: previewDelayTimer
 
@@ -823,6 +846,11 @@ FocusScope {
             enabled: root.selectShortcutEnabled
             sequence: "6"
             onActivated: root.handleSelectDigitShortcut(6)
+        }
+        Shortcut {
+            enabled: root.selectShortcutEnabled
+            sequence: "7"
+            onActivated: root.handleSelectDigitShortcut(7)
         }
         Shortcut {
             enabled: root.selectShortcutEnabled

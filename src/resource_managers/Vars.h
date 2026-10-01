@@ -429,7 +429,16 @@ class GeneralVars final : public QObject
      * @details Defaults to the darksabun table list endpoint.
      */
     Q_PROPERTY(QString tableListUrl READ getTableListUrl WRITE setTableListUrl
-                 NOTIFY tableListUrlChanged RESET resetTableListUrl)
+                  NOTIFY tableListUrlChanged RESET resetTableListUrl)
+    /**
+     * @brief Preferred song download service for missing table songs.
+     * @details One of the source names offered by the song downloader
+     * ("ginger", "wriggle", "konmai"). Unknown values are ignored and fall
+     * back to the default.
+     */
+    Q_PROPERTY(QString downloadSource READ getDownloadSource WRITE
+                 setDownloadSource NOTIFY downloadSourceChanged RESET
+                   resetDownloadSource)
     /**
      * @brief Preferred online ranking provider.
      */
@@ -480,6 +489,9 @@ class GeneralVars final : public QObject
       "UfYy-14dlRmOHb-v3Nbin-Pr5pU9nApG7zcoJfqB6bEut33v"
       "&lib=MZGF-rpGWT28d9kh49MlyleOKhrMb7MMj");
     QString tableListUrl = defaultTableListUrl;
+    inline static const QString defaultDownloadSource =
+      QStringLiteral("ginger");
+    QString downloadSource = defaultDownloadSource;
     qml_components::OnlineRankingModel::Provider rankingProvider =
       qml_components::OnlineRankingModel::Provider::RhythmGame;
 
@@ -594,6 +606,9 @@ class GeneralVars final : public QObject
     auto getTableListUrl() const -> QString;
     void setTableListUrl(const QString& value);
     void resetTableListUrl();
+    auto getDownloadSource() const -> QString;
+    void setDownloadSource(const QString& value);
+    void resetDownloadSource();
     auto getRankingProvider() const
       -> qml_components::OnlineRankingModel::Provider;
     void setRankingProvider(qml_components::OnlineRankingModel::Provider value);
@@ -636,6 +651,7 @@ class GeneralVars final : public QObject
     void soundsetChanged();
     void soundsetPathChanged();
     void tableListUrlChanged();
+    void downloadSourceChanged();
     void rankingProviderChanged();
 };
 

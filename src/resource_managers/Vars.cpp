@@ -971,6 +971,25 @@ resource_managers::GeneralVars::resetTableListUrl()
 {
     setTableListUrl(defaultTableListUrl);
 }
+auto
+resource_managers::GeneralVars::getDownloadSource() const -> QString
+{
+    return downloadSource;
+}
+void
+resource_managers::GeneralVars::setDownloadSource(const QString& value)
+{
+    if (downloadSource == value) {
+        return;
+    }
+    downloadSource = value;
+    emit downloadSourceChanged();
+}
+void
+resource_managers::GeneralVars::resetDownloadSource()
+{
+    setDownloadSource(defaultDownloadSource);
+}
 namespace {
 void
 writeGeneralVars(QThreadPool& writePool,
