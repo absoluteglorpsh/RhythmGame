@@ -273,7 +273,7 @@ resource_managers::SongDownloader::notifyRow(int row)
     emit dataChanged(createIndex(row, 0), createIndex(row, 0));
 }
 
-void
+auto
 resource_managers::SongDownloader::submitMd5(const QString& md5,
                                              const QString& title) -> bool
 {
