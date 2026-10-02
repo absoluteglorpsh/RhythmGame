@@ -145,38 +145,9 @@ resource_managers::Level::loadCharts() const -> QVariantList
     }
 
     auto loaded = queryCharts(*db, ret, md5List);
-    // sort by title, subtitle
-    std::ranges::sort(ret, [](QVariant& a, QVariant& b) {
-        auto getTitle = [](QVariant& chart) {
-            if (chart.canView<gameplay_logic::ChartData*>()) {
-                return chart.value<gameplay_logic::ChartData*>()->getTitle();
-            }
-            if (chart.canView<Entry>()) {
-                return chart.view<Entry>().title;
-            }
-            throw std::runtime_error(
-              "ChartData or Entry not found in QVariant");
-        };
-        const auto titleA = getTitle(a);
-        const auto titleB = getTitle(b);
-        auto getSubtitle = [](QVariant& chart) {
-            if (chart.canView<gameplay_logic::ChartData*>()) {
-                return chart.value<gameplay_logic::ChartData*>()->getSubtitle();
-            }
-            if (chart.canView<Entry>()) {
-                return chart.view<Entry>().subtitle;
-            }
-            throw std::runtime_error(
-              "ChartData or Entry not found in QVariant");
-        };
-        const auto subtitleA = getSubtitle(a);
-        const auto subtitleB = getSubtitle(b);
-        if (titleA == titleB) {
-            return subtitleA < subtitleB;
-        }
-        return titleA < titleB;
-    });
-
+    // Keep table data order: entries stay exactly where the table lists
+    // them (rank order matters for difficulty tables). Presentation layers
+    // apply the user's sort mode on top when one is active.
     spdlog::debug("Loaded {} charts in {} s", loaded, sw);
     return ret;
 }
