@@ -188,8 +188,10 @@ class SongDownloader final : public QAbstractListModel
      * @brief Queues a download for a single table-entry md5.
      * @details Songs already present in the library and md5s already queued
      * are skipped. Mirrors the reference `submitMD5Task` dedup behavior.
+     * @return Whether a new task was queued.
      */
-    Q_INVOKABLE void submitMd5(const QString& md5, const QString& title);
+    Q_INVOKABLE auto submitMd5(const QString& md5, const QString& title)
+      -> bool;
     /**
      * @brief Queues downloads for every missing song in a level listing.
      * @details Accepts the mixed `ChartData*`/`Entry` list returned by
