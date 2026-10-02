@@ -201,6 +201,11 @@ set(RHYTHM_GAME_QML_SHADERS
 
 qt_add_library(RhythmGame_qml STATIC)
 target_link_libraries(RhythmGame_qml PUBLIC RhythmGame_lib)
+# The qmlcache sources compiled into this target are generated from QML and
+# cannot honor -Werror=float-equal from the macOS preset; keep it a warning
+# here on AppleClang. Hand-written code keeps the error via the preset.
+target_compile_options(RhythmGame_qml PRIVATE
+        $<$<CXX_COMPILER_ID:AppleClang>:-Wno-error=float-equal>)
 target_include_directories(RhythmGame_qml PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
 )
@@ -234,6 +239,9 @@ endforeach()
 
 qt_add_library(RhythmGame_lr2_qml STATIC)
 target_link_libraries(RhythmGame_lr2_qml PUBLIC RhythmGame_lib)
+# Same generated-code exemption as RhythmGame_qml above.
+target_compile_options(RhythmGame_lr2_qml PRIVATE
+        $<$<CXX_COMPILER_ID:AppleClang>:-Wno-error=float-equal>)
 target_include_directories(RhythmGame_lr2_qml PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${CMAKE_CURRENT_SOURCE_DIR}/Lr2

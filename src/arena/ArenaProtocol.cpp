@@ -3207,8 +3207,10 @@ decodeServerMessage(QStringView text) -> DecodeServerResult
             const auto data = dataValue.toObject();
             const auto major = data.value(QStringLiteral("protocolMajor"));
             const auto minor = data.value(QStringLiteral("protocolMinor"));
-            if ((major.isDouble() && major.toDouble() != ProtocolMajor) ||
-                (minor.isDouble() && minor.toDouble() != ProtocolMinor)) {
+            if ((major.isDouble() &&
+                 static_cast<long long>(major.toDouble()) != ProtocolMajor) ||
+                (minor.isDouble() &&
+                 static_cast<long long>(minor.toDouble()) != ProtocolMinor)) {
                 fail(ProtocolFailureCode::ProtocolIncompatible);
             }
             const auto capabilities =

@@ -8,6 +8,7 @@
 #include <lexy/dsl.hpp>
 #include <lexy/callback.hpp>
 #include <functional>
+#include <charconv>
 #include <lexy/input/string_input.hpp>
 #include <spdlog/spdlog.h>
 #include <type_traits>
@@ -281,9 +282,18 @@ RG_STRONG_TYPEDEF(std::string, Genre)
 RG_STRONG_TYPEDEF(std::string, StageFile)
 RG_STRONG_TYPEDEF(std::string, Banner)
 RG_STRONG_TYPEDEF(std::string, BackBmp)
+// Parsed header values are compared exactly on purpose; silence
+// -Wfloat-equal for the double wrappers on Clang (see BmsNotes.h).
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wfloat-equal"
+#endif
 RG_STRONG_TYPEDEF(double, Total)
 RG_STRONG_TYPEDEF(double, Rank)
 RG_STRONG_TYPEDEF(double, Bpm)
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
 RG_STRONG_TYPEDEF(int, PlayLevel)
 RG_STRONG_TYPEDEF(int, Difficulty)
 using wav_t = std::pair<uint16_t, std::string>;

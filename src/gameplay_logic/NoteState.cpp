@@ -6,6 +6,13 @@
 
 #include <cmath>
 
+// Position setters compare exactly before emitting changes on purpose;
+// silence -Wfloat-equal for this TU on Clang (see BmsNotes.h).
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wfloat-equal"
+#endif
+
 namespace gameplay_logic {
 void
 ColumnState::setPressed(bool pressed)
@@ -672,3 +679,7 @@ GameplayState::updateVisibleRanges()
                                    position + *barLineVisiblePositionSpan);
 }
 } // namespace gameplay_logic
+
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif

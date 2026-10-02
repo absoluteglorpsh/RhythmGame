@@ -3,6 +3,13 @@
 
 #include <QtQml>
 
+// The defaulted three-way comparison below implements memberwise equality
+// on purpose; silence -Wfloat-equal for it on Clang (see BmsNotes.h).
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wfloat-equal"
+#endif
+
 namespace gameplay_logic {
 class BmsScore;
 }
@@ -334,5 +341,9 @@ class OnlineRankingModel : public QAbstractListModel
 };
 
 } // namespace qml_components
+
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
 
 #endif // RHYTHMGAME_ONLINERANKINGMODEL_H

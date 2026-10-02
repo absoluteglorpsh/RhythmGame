@@ -4,6 +4,13 @@
 
 #include "InputTranslator.h"
 
+// Config values are compared exactly on purpose; silence -Wfloat-equal
+// for this TU on Clang (see BmsNotes.h).
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wfloat-equal"
+#endif
+
 #include "GamepadManager.h"
 #include "db/SqliteCppDb.h"
 #include "support/Compress.h"
@@ -1202,8 +1209,7 @@ InputTranslator::InputTranslator(db::SqliteCppDb* db, QObject* parent)
             commitPendingRelease(static_cast<BmsKey>(index));
         });
     }
-    for (const auto& [index, timer] :
-         support::enumerate(tickTimers)) {
+    for (const auto& [index, timer] : support::enumerate(tickTimers)) {
         // default for Windows 10
         timer.setInterval(32);
         timer.setSingleShot(false);
@@ -1588,3 +1594,7 @@ operator>>(QDataStream& stream, Mapping& mapping) -> QDataStream&
     return stream >> mapping.key >> mapping.button;
 }
 } // namespace input
+
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif

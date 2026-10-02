@@ -1,4 +1,10 @@
 #include "Lr2SkinRuntimeTypes.h"
+// Exact expected values are asserted on purpose; silence -Wfloat-equal for
+// this TU on Clang (see BmsNotes.h).
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wfloat-equal"
+#endif
 #include "Lr2AnimationFrameState.h"
 #include "Lr2BarPositionedItem.h"
 #include "Lr2BlendSprite.h"
@@ -463,3 +469,7 @@ TEST_CASE("LR2 element number state notifies only on real state changes",
     CHECK(state.revision() == 2);
     CHECK(revisionChanges == 2);
 }
+
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif

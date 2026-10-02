@@ -4,6 +4,13 @@
 
 #include <magic_enum/magic_enum.hpp>
 #include "BmsPoints.h"
+
+// Score values are compared exactly on purpose; silence -Wfloat-equal for
+// this TU on Clang (see BmsNotes.h).
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wfloat-equal"
+#endif
 gameplay_logic::BmsPoints::BmsPoints(double value,
                                      gameplay_logic::Judgement judgement,
                                      int64_t deviation)
@@ -51,3 +58,7 @@ gameplay_logic::operator>>(QDataStream& stream, BmsPoints& points)
     points.deviation = deviation;
     return stream;
 }
+
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif

@@ -1,5 +1,12 @@
 #include "resource_managers/ChartFolderModel.h"
 
+// Rates and scores are compared exactly on purpose; silence -Wfloat-equal
+// for this TU on Clang (see BmsNotes.h).
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wfloat-equal"
+#endif
+
 #include "gameplay_logic/BmsResult.h"
 #include "gameplay_logic/BmsScore.h"
 #include "gameplay_logic/ChartData.h"
@@ -1304,3 +1311,7 @@ resource_managers::ChartFolderModel::difficultyForChart(
     }
     return std::max(0, entry.difficulty);
 }
+
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif

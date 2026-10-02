@@ -6,6 +6,13 @@
 #include <spdlog/spdlog.h>
 #include <QtConcurrent>
 #include <QSet>
+
+// Redundant writes are skipped via exact comparison on purpose; silence
+// -Wfloat-equal for this TU on Clang (see BmsNotes.h).
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wfloat-equal"
+#endif
 #include "Vars.h"
 
 #include "qml_components/FileQuery.h"
@@ -2122,3 +2129,7 @@ resource_managers::Vars::getThemeVars() const -> QQmlPropertyMap*
 {
     return themeVars;
 }
+
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif

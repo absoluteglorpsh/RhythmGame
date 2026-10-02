@@ -5,6 +5,13 @@
 #include "CourseRunner.h"
 #include <ranges>
 #include <spdlog/spdlog.h>
+
+// Scores are compared exactly on purpose (FC/MAX detection); silence
+// -Wfloat-equal for this TU on Clang (see BmsNotes.h).
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wfloat-equal"
+#endif
 namespace gameplay_logic {
 CoursePlayer::CoursePlayer(QString guid, QObject* parent)
   : QObject(parent)
@@ -321,3 +328,7 @@ CourseRunner::start() const
     }
 }
 } // gameplay_logic
+
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif

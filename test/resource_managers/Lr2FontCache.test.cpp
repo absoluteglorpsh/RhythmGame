@@ -113,6 +113,12 @@ TEST_CASE("LR2 font image provider applies kerning between glyphs",
     CHECK(pair.height() == 18);
 }
 
+// Pixel-exact assertions compare doubles from QSizeF on purpose; silence
+// -Wfloat-equal for this case on Clang (see BmsNotes.h).
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wfloat-equal"
+#endif
 TEST_CASE("LR2 font image provider preserves glyphs taller than logical size",
           "[LR2FONT][resource_managers]")
 {
@@ -136,6 +142,9 @@ TEST_CASE("LR2 font image provider preserves glyphs taller than logical size",
     CHECK(rendered.image.height() == 12);
     CHECK(qAlpha(rendered.image.pixel(0, 11)) == 255);
 }
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
 
 TEST_CASE("LR2 font parser truncates fractional numeric fields",
           "[LR2FONT][resource_managers]")

@@ -1,5 +1,12 @@
 #include "OnlineRankingModel.h"
 
+// Scores are compared exactly on purpose (MAX detection); silence
+// -Wfloat-equal for this TU on Clang (see BmsNotes.h).
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wfloat-equal"
+#endif
+
 #include "OnlineScores.h"
 #include "ProfileList.h"
 #include "gameplay_logic/Judgement.h"
@@ -1352,3 +1359,7 @@ OnlineRankingModel::getChartId() const -> QString
 }
 
 } // namespace qml_components
+
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif

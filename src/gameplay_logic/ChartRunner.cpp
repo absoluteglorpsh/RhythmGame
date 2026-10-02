@@ -7,6 +7,13 @@
 #include <fmt/ranges.h>
 #include "ChartRunner.h"
 
+// Property setters compare exactly before emitting changes on purpose;
+// silence -Wfloat-equal for this TU on Clang (see BmsNotes.h).
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wfloat-equal"
+#endif
+
 using namespace std::chrono_literals;
 namespace gameplay_logic {
 
@@ -833,3 +840,7 @@ AutoPlayer::update(std::chrono::nanoseconds offsetFromStart, bool lastUpdate)
     Player::update(offsetFromStart, lastUpdate);
 }
 } // namespace gameplay_logic
+
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif

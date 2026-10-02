@@ -381,10 +381,8 @@ createAutoplayFromNotes(const gameplay_logic::BmsNotes& notes)
 {
     auto events = std::vector<gameplay_logic::HitEvent>{};
     const auto& noteArr = notes.getNotes();
-    for (const auto& [columnIndex, column] :
-         support::enumerate(noteArr)) {
-        for (const auto& [noteIndex, note] :
-             support::enumerate(column)) {
+    for (const auto& [columnIndex, column] : support::enumerate(noteArr)) {
+        for (const auto& [noteIndex, note] : support::enumerate(column)) {
             if (note.type == gameplay_logic::Note::Type::Normal) {
                 events.emplace_back(
                   columnIndex,
@@ -649,8 +647,7 @@ getComponentsForPlayer(const ChartFactory::PlayerSpecificData& player,
     }
     auto barLineStates = QList<gameplay_logic::BarLineState>{};
     barLineStates.reserve(notes->getBarLines().size());
-    for (const auto& [i, barLine] :
-         support::enumerate(notes->getBarLines())) {
+    for (const auto& [i, barLine] : support::enumerate(notes->getBarLines())) {
         barLineStates.append({ barLine, i });
     }
     auto* barLinesState =

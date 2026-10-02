@@ -8,6 +8,14 @@
 #include "support/Sha256.h"
 #include "db/SqliteCppDb.h"
 
+// Defaulted three-way comparisons below implement memberwise equality on
+// purpose; silence -Wfloat-equal for them on Clang (the macOS preset treats
+// it as an error and no CI job builds that preset with current toolchains).
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wfloat-equal"
+#endif
+
 namespace gameplay_logic {
 
 class Time
@@ -187,5 +195,9 @@ class BmsNotes : public QObject
     auto save(db::SqliteCppDb& db, const support::Sha256& sha256) const -> void;
 };
 } // namespace gameplay_logic
+
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
 
 #endif // RHYTHMGAME_BMSNOTES_H

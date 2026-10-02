@@ -311,8 +311,7 @@ ChartDataFactory::handleImplicitSubtitle(QString& title,
     if (openPos == std::u32string::npos || openPos == 0)
         return;
     // To avoid weird titles like "(^^)⇒(^^X^^)⇒(^^)) ((^^)"
-    for (const auto& [index, delimiter] :
-         support::enumerate(delimitersStart)) {
+    for (const auto& [index, delimiter] : support::enumerate(delimitersStart)) {
         if (u32[openPos - 1] == delimiter && delimiter != delimiters[index]) {
             return;
         }

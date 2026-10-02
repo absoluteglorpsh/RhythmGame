@@ -1,5 +1,12 @@
 #include "OnlineScores.h"
 
+// Scores are compared exactly on purpose (MAX detection); silence
+// -Wfloat-equal for this TU on Clang (see BmsNotes.h).
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wfloat-equal"
+#endif
+
 #include "gameplay_logic/BmsScore.h"
 #include "support/ConvertTachiClearType.h"
 
@@ -713,3 +720,7 @@ OnlineScores::getRankingEntryAtTimestamp(QString webApiUrl,
 }
 
 } // namespace qml_components
+
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif

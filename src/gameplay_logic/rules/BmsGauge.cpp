@@ -4,6 +4,13 @@
 
 #include "BmsGauge.h"
 
+// Gauge values are compared exactly before emitting changes on purpose;
+// silence -Wfloat-equal for this TU on Clang (see BmsNotes.h).
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wfloat-equal"
+#endif
+
 namespace gameplay_logic::rules {
 auto
 BmsGauge::getGauge() const -> double
@@ -92,3 +99,7 @@ operator>>(QDataStream& stream, GaugeHistoryEntry& entry) -> QDataStream&
     return stream;
 }
 } // namespace gameplay_logic::rules
+
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif

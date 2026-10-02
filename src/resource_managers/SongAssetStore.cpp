@@ -758,7 +758,8 @@ materializationKeyDigest(const std::filesystem::path& virtualPath)
     identity += '\0';
     identity += QByteArray::number(static_cast<qulonglong>(size));
     identity += '\0';
-    identity += QByteArray::number(modified.time_since_epoch().count());
+    identity += QByteArray::number(
+      static_cast<qulonglong>(modified.time_since_epoch().count()));
     identity += '\0';
     identity += boundary->remainder.toCaseFolded().toUtf8();
     return QCryptographicHash::hash(identity, QCryptographicHash::Sha256);
@@ -1282,7 +1283,8 @@ class SongAssetStore::Impl
         return QStringLiteral("physical:%1:%2:%3")
           .arg(normalizedPhysicalPath(path),
                QString::number(static_cast<qulonglong>(size)),
-               QString::number(modified.time_since_epoch().count()));
+               QString::number(
+                 static_cast<qulonglong>(modified.time_since_epoch().count())));
     }
 
     std::filesystem::path materializationDirectory;

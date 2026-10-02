@@ -4,6 +4,13 @@
 
 #include "Lr2Gauge.h"
 
+// Gauge values are compared exactly before emitting changes on purpose;
+// silence -Wfloat-equal for this TU on Clang (see BmsNotes.h).
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wfloat-equal"
+#endif
+
 #include <utility>
 void
 gameplay_logic::rules::Lr2Gauge::addHit(
@@ -320,3 +327,7 @@ gameplay_logic::rules::Lr2Gauge::addMineHit(
         addGaugeHistoryEntry({ offsetFromStart.count(), newGauge });
     }
 }
+
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif

@@ -8,6 +8,13 @@
 #include <spdlog/spdlog.h>
 #include <QDateTime>
 
+// Score values are compared exactly on purpose; silence -Wfloat-equal for
+// this TU on Clang (see BmsNotes.h).
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wfloat-equal"
+#endif
+
 namespace gameplay_logic {
 BmsLiveScore::BmsLiveScore(
   int normalNoteCount,
@@ -405,3 +412,7 @@ BmsLiveScore::getMineCount() const -> int
 }
 
 } // namespace gameplay_logic
+
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif

@@ -1,4 +1,10 @@
 #include "Lr2BarBaseStateResolver.h"
+// Exact expected values are asserted on purpose; silence -Wfloat-equal for
+// this TU on Clang (see BmsNotes.h).
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wfloat-equal"
+#endif
 #include "Lr2BarPositionMap.h"
 
 #include <catch2/catch_test_macros.hpp>
@@ -139,3 +145,7 @@ TEST_CASE("LR2 bar base state resolver disables fast scroll when selected row "
 
     REQUIRE_FALSE(resolver.fastScrollActive());
 }
+
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif

@@ -4,6 +4,13 @@
 
 #include "AudioPlayer.h"
 
+// Length and volume are compared exactly before emitting changes on
+// purpose; silence -Wfloat-equal for this TU on Clang (see BmsNotes.h).
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wfloat-equal"
+#endif
+
 #include "AudioEngine.h"
 #include "resource_managers/SongAssetStore.h"
 #include <QFileInfo>
@@ -534,3 +541,7 @@ AudioPlayer::getLength() const -> float
     return length;
 }
 } // namespace sounds
+
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif

@@ -363,8 +363,7 @@ reorderInFile(const QDir& tableLocation, const QUrl& url1, const QUrl& url2)
 
     int index1 = -1;
     int index2 = -1;
-    for (const auto& [index, entry] :
-         support::enumerate(existingArray)) {
+    for (const auto& [index, entry] : support::enumerate(existingArray)) {
         if (entry.toObject()["url"].toString() == url1.toString()) {
             index1 = index;
         }

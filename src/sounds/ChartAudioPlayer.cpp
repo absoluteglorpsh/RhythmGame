@@ -1,5 +1,12 @@
 #include "ChartAudioPlayer.h"
 
+// Volume is compared exactly before applying changes on purpose; silence
+// -Wfloat-equal for this TU on Clang (see BmsNotes.h).
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wfloat-equal"
+#endif
+
 #include "AudioEngine.h"
 #include "Sound.h"
 #include "resource_managers/ChartDataFactory.h"
@@ -665,3 +672,7 @@ ChartAudioPlayer::setLoading(const bool value)
 }
 
 } // namespace sounds
+
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
