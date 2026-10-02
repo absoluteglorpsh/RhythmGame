@@ -32,6 +32,7 @@ FocusScope {
         readonly property var generalVars: Rg.profileList.mainProfile.vars.generalVars
         readonly property var themeVars: (Rg.profileList.mainProfile.vars.themeVars.select || {})[QmlUtils.themeName] || ({})
         readonly property int replayType: replayTypeIndex(generalVars ? generalVars.replayType : 0)
+        property bool pendingDownloadRefresh: false
 
         ThemeFont {
             id: scoreInfoFont
@@ -180,11 +181,20 @@ FocusScope {
 
         function downloadSelectedEntry() {
             let target = songList.current;
-            if (!(target instanceof entry)) {
-                return false;
+            // Attempting to play a missing song downloads it instead,
+            // mirroring endlessdream (single missing chart, or every
+            // missing chart when attempting a course).
+            if (target instanceof entry) {
+                return Rg.songDownloader.submitMd5(target.md5, target.title || "");
             }
-            Rg.songDownloader.submitMd5(target.md5, target.title || "");
-            return true;
+            if (target instanceof course) {
+                let submitted = false;
+                for (const md5 of target.md5s || []) {
+                    submitted = Rg.songDownloader.submitMd5(md5, "") || submitted;
+                }
+                return submitted;
+            }
+            return false;
         }
 
         function downloadAllMissing() {
@@ -604,8 +614,20 @@ FocusScope {
             Connections {
                 target: Rg.songDownloader
 
+                // The rescan runs async after extraction; reload only once
+                // it drains so the fresh charts are actually in the view.
                 function onExtractionFinished() {
-                    songList.controller.refresh();
+                    root.pendingDownloadRefresh = true;
+                }
+            }
+            Connections {
+                target: Rg.rootSongFoldersConfig.scanningQueue
+
+                function onQueueDrained() {
+                    if (root.pendingDownloadRefresh) {
+                        root.pendingDownloadRefresh = false;
+                        songList.controller.reloadCurrentFolderOrTable();
+                    }
                 }
             }
             Timer {

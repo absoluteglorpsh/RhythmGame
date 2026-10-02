@@ -286,24 +286,24 @@ resource_managers::SongDownloader::notifyRow(int row)
     emit dataChanged(createIndex(row, 0), createIndex(row, 0));
 }
 
-void
+auto
 resource_managers::SongDownloader::submitMd5(const QString& md5,
-                                             const QString& title)
+                                             const QString& title) -> bool
 {
     const auto normalized = md5.toUpper().trimmed();
     if (normalized.isEmpty()) {
-        return;
+        return false;
     }
     if (isOwned(normalized)) {
         spdlog::info("Skipping download of {}: already in the library",
                      normalized.toStdString());
-        return;
+        return false;
     }
     for (const auto& task : tasks) {
         if (task.md5 == normalized && task.status != DownloadTask::Error) {
             spdlog::info("Skipping download of {}: already queued",
                          normalized.toStdString());
-            return;
+            return false;
         }
     }
     beginInsertRows(QModelIndex(), tasks.size(), tasks.size());
@@ -314,6 +314,7 @@ resource_managers::SongDownloader::submitMd5(const QString& md5,
     endInsertRows();
     emit countChanged();
     pump();
+    return true;
 }
 
 void
