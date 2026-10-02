@@ -153,6 +153,7 @@ qt_add_library(RhythmGame_lib OBJECT
         src/charts/ParsedBmsChart.h
         src/support/EnableSharedFromBase.cpp
         src/support/EnableSharedFromBase.h
+        src/support/Enumerate.h
         src/support/FrameRateLimiter.h
         src/support/Capitalize.cpp
         src/support/Capitalize.h

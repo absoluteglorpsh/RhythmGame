@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <ranges>
 #include "BmsGameReferee.h"
+#include "support/Enumerate.h"
 
 namespace {
 
@@ -40,7 +41,7 @@ gameplay_logic::BmsGameReferee::BmsGameReferee(
 {
     for (int i = 0; i < charts::BmsNotesData::columnNumber; i++) {
         for (const auto& [index, note] :
-             std::ranges::views::enumerate(notes[i])) {
+             support::enumerate(notes[i])) {
             addNote(this->notes[i], this->mines[i], note, index);
         }
     }

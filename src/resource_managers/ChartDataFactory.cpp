@@ -4,6 +4,7 @@
 
 #include "charts/Base62.h"
 #include "support/Version.h"
+#include "support/Enumerate.h"
 #ifdef _WIN32
 #include <windows.h>
 #include <wil/resource.h>
@@ -206,7 +207,7 @@ createHistogram(const charts::BmsNotesData& calculatedNotesData,
     }
     if (lastNoteTimestamp != 0ns) {
         for (const auto& [columnIndex, column] :
-             std::ranges::views::enumerate(calculatedNotesData.notes)) {
+             support::enumerate(calculatedNotesData.notes)) {
             auto lastLnBeginPosition = size_t{ 0 };
             for (const auto note : column) {
                 auto typeIndex = 0;
@@ -311,7 +312,7 @@ ChartDataFactory::handleImplicitSubtitle(QString& title,
         return;
     // To avoid weird titles like "(^^)⇒(^^X^^)⇒(^^)) ((^^)"
     for (const auto& [index, delimiter] :
-         std::ranges::views::enumerate(delimitersStart)) {
+         support::enumerate(delimitersStart)) {
         if (u32[openPos - 1] == delimiter && delimiter != delimiters[index]) {
             return;
         }
@@ -600,7 +601,7 @@ ChartDataFactory::buildChartComponents(
     auto bssNotes = 0;
     auto mineNotes = 0;
     for (const auto& [index, column] :
-         std::ranges::views::enumerate(calculatedNotesData.notes)) {
+         support::enumerate(calculatedNotesData.notes)) {
         for (const auto& note : column) {
             switch (note.noteType) {
                 case charts::BmsNotesData::NoteType::Normal:

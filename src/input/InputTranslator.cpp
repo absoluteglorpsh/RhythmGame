@@ -7,6 +7,7 @@
 #include "GamepadManager.h"
 #include "db/SqliteCppDb.h"
 #include "support/Compress.h"
+#include "support/Enumerate.h"
 #include "support/GeneratePermutation.h"
 
 #include <QKeyEvent>
@@ -1193,7 +1194,7 @@ InputTranslator::InputTranslator(db::SqliteCppDb* db, QObject* parent)
             &InputTranslator::keyConfigModified,
             this,
             &InputTranslator::checkAnalogAxisStatus);
-    for (auto&& [index, state] : std::ranges::views::enumerate(buttons)) {
+    for (auto&& [index, state] : support::enumerate(buttons)) {
         auto& timer = state.debounceTimer;
         timer.setSingleShot(true);
         timer.setTimerType(Qt::PreciseTimer);
@@ -1202,7 +1203,7 @@ InputTranslator::InputTranslator(db::SqliteCppDb* db, QObject* parent)
         });
     }
     for (const auto& [index, timer] :
-         std::ranges::views::enumerate(tickTimers)) {
+         support::enumerate(tickTimers)) {
         // default for Windows 10
         timer.setInterval(32);
         timer.setSingleShot(false);
@@ -1545,7 +1546,7 @@ InputTranslator::setDebounceMs(double value)
     }
     debounceMs = value;
     saveDebounce();
-    for (const auto& [index, state] : std::ranges::views::enumerate(buttons)) {
+    for (const auto& [index, state] : support::enumerate(buttons)) {
         if (!state.pendingRelease.has_value()) {
             continue;
         }
