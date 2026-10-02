@@ -15,6 +15,7 @@
 #include <QMetaObject>
 #include <QNetworkAccessManager>
 #include <QNetworkRequest>
+#include <QRegularExpression>
 #include <QSaveFile>
 #include <QUrl>
 #include <archive.h>
@@ -221,6 +222,18 @@ resource_managers::SongDownloader::SongDownloader(
     if (!downloadLocation.mkpath(".")) {
         spdlog::error("Failed to create folder for song downloads: {}",
                       downloadLocation.path().toStdString());
+    }
+    // Drop QSaveFile scratch files orphaned by an earlier crash or kill;
+    // no download is in flight this early, so nothing here is live.
+    static const auto stale =
+      QRegularExpression{ QStringLiteral("\\.7z\\.[A-Za-z0-9]{6}$") };
+    for (const auto& leftover :
+         downloadLocation.entryList(QDir::Files | QDir::NoDotAndDotDot)) {
+        if (stale.match(leftover).hasMatch()) {
+            spdlog::info("Removing stale partial download: {}",
+                         leftover.toStdString());
+            QFile::remove(downloadLocation.filePath(leftover));
+        }
     }
 }
 
