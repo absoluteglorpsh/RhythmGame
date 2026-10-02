@@ -18,6 +18,7 @@
 #include "support/GeneratePermutation.h"
 
 #include <QKeyEvent>
+#include <QHash>
 #include <QVariant>
 #include <algorithm>
 #include <array>
@@ -1475,18 +1476,29 @@ InputTranslator::eventFilter(std::chrono::milliseconds timePoint, QEvent* event)
 {
     // Used only on non-Windows platforms; on Windows the WH_KEYBOARD_LL hook
     // in CustomNotifyApp calls handleKeyEvent directly before the IME runs.
+    // On macOS Qt reports a zero nativeScanCode, so the Mac virtual key code
+    // from nativeVirtualKey is used instead; it is positional like a
+    // scancode, which is what rhythm game binds want.
     if (event->type() == QEvent::KeyPress) {
         const auto* const key = static_cast<QKeyEvent*>(event);
         if (key->isAutoRepeat()) {
             return;
         }
+#ifdef Q_OS_MACOS
+        handleKeyEvent(key->nativeVirtualKey(), true, timePoint.count());
+#else
         handleKeyEvent(key->nativeScanCode(), true, timePoint.count());
+#endif
     } else if (event->type() == QEvent::KeyRelease) {
         const auto* const key = static_cast<QKeyEvent*>(event);
         if (key->isAutoRepeat()) {
             return;
         }
+#ifdef Q_OS_MACOS
+        handleKeyEvent(key->nativeVirtualKey(), false, timePoint.count());
+#else
         handleKeyEvent(key->nativeScanCode(), false, timePoint.count());
+#endif
     }
 }
 QString
@@ -1533,6 +1545,95 @@ InputTranslator::scancodeToString(const int scanCode)
     xkb_keysym_get_name(sym, buf, sizeof(buf));
     if (buf[0] != '\0') {
         return QString::fromUtf8(buf);
+    }
+#elif defined(Q_OS_MACOS)
+    // Mac virtual key codes (HIToolbox/Events.h); positional, like scancodes.
+    static const auto names = QHash<int, QString>{
+        { 0, QStringLiteral("A") },
+        { 1, QStringLiteral("S") },
+        { 2, QStringLiteral("D") },
+        { 3, QStringLiteral("F") },
+        { 4, QStringLiteral("H") },
+        { 5, QStringLiteral("G") },
+        { 6, QStringLiteral("Z") },
+        { 7, QStringLiteral("X") },
+        { 8, QStringLiteral("C") },
+        { 9, QStringLiteral("V") },
+        { 11, QStringLiteral("B") },
+        { 12, QStringLiteral("Q") },
+        { 13, QStringLiteral("W") },
+        { 14, QStringLiteral("E") },
+        { 15, QStringLiteral("R") },
+        { 16, QStringLiteral("Y") },
+        { 17, QStringLiteral("T") },
+        { 18, QStringLiteral("1") },
+        { 19, QStringLiteral("2") },
+        { 20, QStringLiteral("3") },
+        { 21, QStringLiteral("4") },
+        { 22, QStringLiteral("6") },
+        { 23, QStringLiteral("5") },
+        { 24, QStringLiteral("=") },
+        { 25, QStringLiteral("9") },
+        { 26, QStringLiteral("7") },
+        { 27, QStringLiteral("-") },
+        { 28, QStringLiteral("8") },
+        { 29, QStringLiteral("0") },
+        { 30, QStringLiteral("]") },
+        { 31, QStringLiteral("O") },
+        { 32, QStringLiteral("U") },
+        { 33, QStringLiteral("[") },
+        { 34, QStringLiteral("I") },
+        { 35, QStringLiteral("P") },
+        { 36, QStringLiteral("Return") },
+        { 37, QStringLiteral("L") },
+        { 38, QStringLiteral("J") },
+        { 39, QStringLiteral("'") },
+        { 40, QStringLiteral("K") },
+        { 41, QStringLiteral(";") },
+        { 42, QStringLiteral("\\") },
+        { 43, QStringLiteral(",") },
+        { 44, QStringLiteral("/") },
+        { 45, QStringLiteral("N") },
+        { 46, QStringLiteral("M") },
+        { 47, QStringLiteral(".") },
+        { 48, QStringLiteral("Tab") },
+        { 49, QStringLiteral("Space") },
+        { 50, QStringLiteral("`") },
+        { 51, QStringLiteral("Delete") },
+        { 53, QStringLiteral("Escape") },
+        { 55, QStringLiteral("Command") },
+        { 56, QStringLiteral("Shift") },
+        { 57, QStringLiteral("Caps Lock") },
+        { 58, QStringLiteral("Option") },
+        { 59, QStringLiteral("Control") },
+        { 60, QStringLiteral("Right Shift") },
+        { 61, QStringLiteral("Right Option") },
+        { 62, QStringLiteral("Right Control") },
+        { 96, QStringLiteral("F5") },
+        { 97, QStringLiteral("F6") },
+        { 98, QStringLiteral("F7") },
+        { 99, QStringLiteral("F3") },
+        { 100, QStringLiteral("F8") },
+        { 101, QStringLiteral("F9") },
+        { 103, QStringLiteral("F11") },
+        { 109, QStringLiteral("F10") },
+        { 111, QStringLiteral("F12") },
+        { 113, QStringLiteral("F15") },
+        { 115, QStringLiteral("Home") },
+        { 116, QStringLiteral("Page Up") },
+        { 117, QStringLiteral("Forward Delete") },
+        { 118, QStringLiteral("F4") },
+        { 119, QStringLiteral("End") },
+        { 120, QStringLiteral("F2") },
+        { 121, QStringLiteral("Page Down") },
+        { 122, QStringLiteral("F1") },
+        { 123, QStringLiteral("Left Arrow") },
+        { 124, QStringLiteral("Right Arrow") },
+        { 125, QStringLiteral("Down Arrow") },
+        { 126, QStringLiteral("Up Arrow") },
+    };
+    if (const auto name = names.find(scanCode); name != names.end()) {
+        return *name;
     }
 #endif
     return QString("Scancode %1").arg(scanCode);
