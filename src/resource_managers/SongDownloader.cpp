@@ -284,6 +284,48 @@ void
 resource_managers::SongDownloader::notifyRow(int row)
 {
     emit dataChanged(createIndex(row, 0), createIndex(row, 0));
+    updateActivity();
+}
+
+void
+resource_managers::SongDownloader::updateActivity()
+{
+    // Prefer the in-flight download/extraction, otherwise the oldest task
+    // that still has work ahead of it.
+    auto active = -1;
+    for (auto row = 0; row < tasks.size(); ++row) {
+        if (phases[row] == Phase::DownloadActive ||
+            phases[row] == Phase::ExtractActive) {
+            active = row;
+            break;
+        }
+    }
+    if (active == -1) {
+        for (auto row = 0; row < tasks.size(); ++row) {
+            if (phases[row] != Phase::Done) {
+                active = row;
+                break;
+            }
+        }
+    }
+    const auto newBusy = active != -1;
+    const auto newName = active != -1 ? tasks[active].name : QString{};
+    const auto newStatus =
+      active != -1 ? tasks[active].status : DownloadTask::Prepare;
+    const auto newReceived = active != -1 ? tasks[active].bytesReceived : 0;
+    const auto newTotal = active != -1 ? tasks[active].totalBytes : 0;
+    if (newBusy != busy) {
+        busy = newBusy;
+        emit busyChanged();
+    }
+    if (newName != activeName || newStatus != activeStatus ||
+        newReceived != activeReceived || newTotal != activeTotal) {
+        activeName = newName;
+        activeStatus = newStatus;
+        activeReceived = newReceived;
+        activeTotal = newTotal;
+        emit activityChanged();
+    }
 }
 
 auto
@@ -313,6 +355,7 @@ resource_managers::SongDownloader::submitMd5(const QString& md5,
     phases.push_back(Phase::ResolvePending);
     endInsertRows();
     emit countChanged();
+    updateActivity();
     pump();
     return true;
 }
@@ -433,7 +476,7 @@ resource_managers::SongDownloader::startResolve(int row)
                          metaUrl.toStdString());
             // A duplicate is not worth retrying, but it reuses the task slot
             // so the list stays append-only and row indices stay stable.
-            failTask(row, tr("Already submitted"));
+            failTask(row, tr("Already submitted"), false);
             pump();
             return;
         }
@@ -614,12 +657,14 @@ resource_managers::SongDownloader::finishExtraction(int row,
     tasks[row].status = DownloadTask::Finished;
     phases[row] = Phase::Done;
     notifyRow(row);
+    emit taskFinished(tasks[row].name);
     emit extractionFinished(downloadLocation.path());
     pump();
 }
-
 void
-resource_managers::SongDownloader::failTask(int row, const QString& error)
+resource_managers::SongDownloader::failTask(int row,
+                                            const QString& error,
+                                            bool notify)
 {
     if (row < 0 || row >= tasks.size()) {
         return;
@@ -631,4 +676,7 @@ resource_managers::SongDownloader::failTask(int row, const QString& error)
                   tasks[row].md5.toStdString(),
                   tasks[row].errorMessage.toStdString());
     notifyRow(row);
+    if (notify) {
+        emit taskFailed(tasks[row].name, tasks[row].errorMessage);
+    }
 }

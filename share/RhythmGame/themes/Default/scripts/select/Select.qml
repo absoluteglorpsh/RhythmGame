@@ -33,6 +33,12 @@ FocusScope {
         readonly property var themeVars: (Rg.profileList.mainProfile.vars.themeVars.select || {})[QmlUtils.themeName] || ({})
         readonly property int replayType: replayTypeIndex(generalVars ? generalVars.replayType : 0)
         property bool pendingDownloadRefresh: false
+        property string downloadNotice: ""
+
+        function showDownloadNotice(text) {
+            downloadNotice = text;
+            downloadNoticeTimer.restart();
+        }
 
         ThemeFont {
             id: scoreInfoFont
@@ -619,6 +625,14 @@ FocusScope {
                 function onExtractionFinished() {
                     root.pendingDownloadRefresh = true;
                 }
+
+                function onTaskFinished(name) {
+                    root.showDownloadNotice(qsTr("Downloaded %1").arg(name));
+                }
+
+                function onTaskFailed(name, errorMessage) {
+                    root.showDownloadNotice(qsTr("Download failed: %1 (%2)").arg(name).arg(errorMessage));
+                }
             }
             Connections {
                 target: Rg.rootSongFoldersConfig.scanningQueue
@@ -627,6 +641,71 @@ FocusScope {
                     if (root.pendingDownloadRefresh) {
                         root.pendingDownloadRefresh = false;
                         songList.controller.reloadCurrentFolderOrTable();
+                    }
+                }
+            }
+            Timer {
+                id: downloadNoticeTimer
+
+                interval: 4000
+                onTriggered: root.downloadNotice = ""
+            }
+            Rectangle {
+                id: downloadToast
+
+                visible: Rg.songDownloader.busy || root.downloadNotice !== ""
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.bottom: parent.bottom
+                anchors.bottomMargin: 30
+                width: Math.min(560, toastColumn.implicitWidth + 40)
+                height: toastColumn.implicitHeight + 24
+                radius: 10
+                color: palette.highlight
+                border.color: palette.highlightedText
+                border.width: 1
+                z: 10
+
+                Column {
+                    id: toastColumn
+
+                    anchors.centerIn: parent
+                    width: parent.width - 32
+                    spacing: 6
+
+                    Text {
+                        id: toastText
+
+                        width: parent.width
+                        elide: Text.ElideRight
+                        color: palette.highlightedText
+                        font.pixelSize: 16
+                        text: {
+                            if (root.downloadNotice !== "") {
+                                return root.downloadNotice;
+                            }
+                            const status = Rg.songDownloader.activeStatus;
+                            const name = Rg.songDownloader.activeName;
+                            if (status === downloadTask.Downloading) {
+                                return qsTr("Downloading %1…").arg(name);
+                            }
+                            if (status === downloadTask.Extracting) {
+                                return qsTr("Extracting %1…").arg(name);
+                            }
+                            if (status === downloadTask.Downloaded) {
+                                return qsTr("Downloaded %1, extracting…").arg(name);
+                            }
+                            return qsTr("Queued %1").arg(name);
+                        }
+                    }
+
+                    ProgressBar {
+                        visible: Rg.songDownloader.busy
+                            && Rg.songDownloader.activeStatus === downloadTask.Downloading
+                        width: parent.width
+                        from: 0
+                        to: Math.max(1, Rg.songDownloader.activeTotal)
+                        value: Rg.songDownloader.activeReceived
+                        indeterminate: Rg.songDownloader.activeTotal <= 0
                     }
                 }
             }

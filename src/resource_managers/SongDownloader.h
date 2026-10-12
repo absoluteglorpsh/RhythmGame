@@ -140,6 +140,13 @@ class SongDownloader final : public QAbstractListModel
     Q_PROPERTY(QString source READ getSource WRITE setSource NOTIFY
                  sourceChanged)
     Q_PROPERTY(int count READ getCount NOTIFY countChanged)
+    Q_PROPERTY(bool busy READ isBusy NOTIFY busyChanged)
+    Q_PROPERTY(QString activeName READ getActiveName NOTIFY activityChanged)
+    Q_PROPERTY(int activeStatus READ getActiveStatus NOTIFY activityChanged)
+    Q_PROPERTY(qint64 activeReceived READ getActiveReceived NOTIFY
+                 activityChanged)
+    Q_PROPERTY(qint64 activeTotal READ getActiveTotal NOTIFY
+                 activityChanged)
 
     QNetworkAccessManager* networkManager;
     QDir downloadLocation;
@@ -164,13 +171,21 @@ class SongDownloader final : public QAbstractListModel
     // Scratch file for the single in-flight download; song packages stream
     // straight to disk instead of buffering in memory.
     std::unique_ptr<QSaveFile> activeFile;
+    // Cached aggregate activity for the QML toast; refreshed by
+    // updateActivity() whenever task state changes.
+    bool busy{ false };
+    QString activeName;
+    DownloadTask::Status activeStatus{ DownloadTask::Prepare };
+    qint64 activeReceived{ 0 };
+    qint64 activeTotal{ 0 };
 
     void pump();
     void startResolve(int row);
     void startDownload(int row);
     void startExtraction(int row, const QString& archivePath);
+    void updateActivity();
     void finishExtraction(int row, bool ok, const QString& error);
-    void failTask(int row, const QString& error);
+    void failTask(int row, const QString& error, bool notify = true);
     [[nodiscard]] auto findRowByUrl(const QString& url) const -> int;
     [[nodiscard]] auto isOwned(const QString& md5) -> bool;
     void notifyRow(int row);
@@ -211,10 +226,22 @@ class SongDownloader final : public QAbstractListModel
     auto getSource() const -> QString;
     void setSource(const QString& source);
     auto getCount() const -> int { return tasks.size(); }
+    auto isBusy() const -> bool { return busy; }
+    auto getActiveName() const -> QString { return activeName; }
+    auto getActiveStatus() const -> int
+    {
+        return static_cast<int>(activeStatus);
+    }
+    auto getActiveReceived() const -> qint64 { return activeReceived; }
+    auto getActiveTotal() const -> qint64 { return activeTotal; }
 
   signals:
     void sourceChanged();
     void countChanged();
+    void busyChanged();
+    void activityChanged();
+    void taskFinished(const QString& name);
+    void taskFailed(const QString& name, const QString& errorMessage);
     /**
      * @brief Emitted with the downloads folder path after an extraction.
      * @details The caller is expected to register the folder as a song root
