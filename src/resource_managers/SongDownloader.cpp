@@ -93,7 +93,7 @@ fileNameFromContentDisposition(const QString& header, const QString& fallback)
 }
 
 auto
-downloads::normalizeDownloadUrl(const QUrl& url) -> QUrl
+normalizeDownloadUrl(const QUrl& url) -> QUrl
 {
     if (url.host().endsWith(QStringLiteral("pixeldrain.net")) ||
         url.host().endsWith(QStringLiteral("pixeldrain.com"))) {
