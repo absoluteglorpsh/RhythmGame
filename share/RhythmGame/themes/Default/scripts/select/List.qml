@@ -325,9 +325,12 @@ PathView {
     }
 
     Keys.onLeftPressed: selectController.goBack()
-    Keys.onReturnPressed: selectController.goForward(current)
-    Keys.onEnterPressed: selectController.goForward(current)
-    Keys.onRightPressed: selectController.goForward(current)
+    Keys.onReturnPressed: root.downloadSelectedEntry()
+        || selectController.goForward(current)
+    Keys.onEnterPressed: root.downloadSelectedEntry()
+        || selectController.goForward(current)
+    Keys.onRightPressed: root.downloadSelectedEntry()
+        || selectController.goForward(current)
     Keys.onUpPressed: event => selectController.handleUpPressed(event)
     Keys.onDownPressed: event => selectController.handleDownPressed(event)
     Keys.onReleased: event => selectController.handleReleased(event)
