@@ -1,5 +1,6 @@
 #include "resource_managers/SongDownloader.h"
 
+#include <QUrl>
 #include <algorithm>
 #include <catch2/catch_test_macros.hpp>
 
@@ -93,4 +94,28 @@ TEST_CASE("content disposition cannot escape the downloads folder")
             R"(attachment; filename="../../evil.7z")", "ABC.7z") == "evil.7z");
     CHECK(fileNameFromContentDisposition(
             R"(attachment; filename="..\\evil.7z")", "ABC.7z") == "evil.7z");
+}
+
+TEST_CASE("pixeldrain viewer links rewrite to direct file links")
+{
+    CHECK(
+      normalizeDownloadUrl(QUrl{ "https://pixeldrain.net/d/abc123/pack.7z" })
+        .toString() == "https://pixeldrain.net/api/filesystem/abc123/pack.7z");
+    CHECK(normalizeDownloadUrl(QUrl{ "https://pixeldrain.net/d/abc123" })
+            .toString() == "https://pixeldrain.net/api/filesystem/abc123");
+    CHECK(normalizeDownloadUrl(
+            QUrl{ "https://pixeldrain.com/d/abc123/pack.7z?x=1#frag" })
+            .toString() ==
+          "https://pixeldrain.com/api/filesystem/abc123/pack.7z");
+}
+
+TEST_CASE("other download URLs pass through untouched")
+{
+    CHECK(normalizeDownloadUrl(
+            QUrl{ "https://bms.wrigglebug.xyz/download/package/abc" })
+            .toString() == "https://bms.wrigglebug.xyz/download/package/abc");
+    CHECK(normalizeDownloadUrl(
+            QUrl{ "https://pixeldrain.net/api/filesystem/abc123/pack.7z" })
+            .toString() ==
+          "https://pixeldrain.net/api/filesystem/abc123/pack.7z");
 }

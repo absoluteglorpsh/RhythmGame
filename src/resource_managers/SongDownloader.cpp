@@ -93,6 +93,24 @@ fileNameFromContentDisposition(const QString& header, const QString& fallback)
 }
 
 auto
+downloads::normalizeDownloadUrl(const QUrl& url) -> QUrl
+{
+    if (url.host().endsWith(QStringLiteral("pixeldrain.net")) ||
+        url.host().endsWith(QStringLiteral("pixeldrain.com"))) {
+        const auto path = url.path();
+        if (path.startsWith(QStringLiteral("/d/"))) {
+            auto direct = url;
+            direct.setPath(QStringLiteral("/api/filesystem/") +
+                           path.sliced(QStringLiteral("/d/").size()));
+            direct.setQuery(QString{});
+            direct.setFragment(QString{});
+            return direct;
+        }
+    }
+    return url;
+}
+
+auto
 defaultDownloadSources() -> QList<DownloadSource>
 {
     return {
@@ -127,6 +145,22 @@ extractArchive(const QString& archivePath,
     auto* reader = archive_read_new();
     archive_read_support_format_all(reader);
     archive_read_support_filter_all(reader);
+    {
+        // Fail fast with a useful message when the server handed us a web
+        // page (e.g. a file-host viewer link) instead of an archive.
+        auto probe = QFile{ archivePath };
+        if (probe.open(QIODevice::ReadOnly)) {
+            const auto head = probe.read(16).trimmed().left(9).toLower();
+            probe.close();
+            if (head.startsWith("<!doctype") || head.startsWith("<html") ||
+                head.startsWith('{')) {
+                error = QStringLiteral(
+                  "The downloaded file is a web page, not an archive");
+                archive_read_free(reader);
+                return false;
+            }
+        }
+    }
 #ifdef _WIN32
     const auto archiveName = archivePath.toStdWString();
     const auto opened =
@@ -468,7 +502,8 @@ resource_managers::SongDownloader::startResolve(int row)
     const auto metaUrl =
       downloads::formatPatternUrl(it->urlPattern, tasks[row].md5);
     if (!it->needsMetaQuery) {
-        tasks[row].url = metaUrl;
+        tasks[row].url =
+          downloads::normalizeDownloadUrl(QUrl{ metaUrl }).toString();
         if (const auto dupe = findRowByUrl(metaUrl);
             dupe != -1 && dupe != row &&
             tasks[dupe].status != DownloadTask::Error) {
@@ -510,7 +545,8 @@ resource_managers::SongDownloader::startResolve(int row)
             pump();
             return;
         }
-        tasks[row].url = *url;
+        tasks[row].url =
+          downloads::normalizeDownloadUrl(QUrl{ *url }).toString();
         if (const auto dupe = findRowByUrl(*url);
             dupe != -1 && dupe != row &&
             tasks[dupe].status != DownloadTask::Error) {

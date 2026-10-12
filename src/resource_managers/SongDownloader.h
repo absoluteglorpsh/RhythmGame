@@ -19,6 +19,7 @@
 #include <QDir>
 #include <QNetworkReply>
 #include <QSaveFile>
+#include <QUrl>
 #include <memory>
 #include <optional>
 #include <qthreadpool.h>
@@ -67,6 +68,17 @@ parseKonmaiMeta(const QByteArray& body) -> std::optional<QString>;
 auto
 fileNameFromContentDisposition(const QString& header,
                               const QString& fallback) -> QString;
+
+/**
+ * @brief Rewrites viewer-page URLs to direct file URLs where the pattern is
+ * known.
+ * @details Some services hand out pixeldrain `/d/<id>/<file>` viewer pages
+ * instead of files; those download as HTML and fail extraction. The
+ * equivalent `/api/filesystem/<id>/<file>` serves the bytes, so rewrite the
+ * prefix (dropping viewer query/fragment) and leave anything else alone.
+ */
+auto
+normalizeDownloadUrl(const QUrl& url) -> QUrl;
 
 struct DownloadSource
 {
