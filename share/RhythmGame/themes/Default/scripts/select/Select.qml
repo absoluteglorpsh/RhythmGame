@@ -674,7 +674,9 @@ FocusScope {
             Rectangle {
                 id: downloadToast
 
-                visible: Rg.songDownloader.busy || root.downloadNotice !== ""
+                visible: Rg.songDownloader.busy
+                    || root.downloadNotice !== ""
+                    || root.pendingDownloadRefresh
                 anchors.horizontalCenter: parent.horizontalCenter
                 anchors.bottom: parent.bottom
                 anchors.bottomMargin: 30
@@ -703,6 +705,9 @@ FocusScope {
                         text: {
                             if (root.downloadNotice !== "") {
                                 return root.downloadNotice;
+                            }
+                            if (root.pendingDownloadRefresh) {
+                                return qsTr("Refreshing library…");
                             }
                             const status = Rg.songDownloader.activeStatus;
                             const name = Rg.songDownloader.activeName;

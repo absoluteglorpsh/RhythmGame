@@ -523,20 +523,25 @@ main(int argc, [[maybe_unused]] char* argv[]) -> int
         };
         // Keep the managed downloads folder registered as a song root and
         // rescan it after every extraction, mirroring the reference
-        // main.updateSong(downloadDir, true) step.
+        // main.updateSong(downloadDir, true) step. Single-directory
+        // packages rescan just their folder instead of the whole root.
         QObject::connect(
           &songDownloader,
           &resource_managers::SongDownloader::extractionFinished,
           &folders,
-          [&](const QString& path) {
+          [&](const QString& path, const QString& subdir) {
               folders.add(path);
               const auto canonical = path.endsWith('/') ? path : path + '/';
               for (auto i = 0; i < folders.rowCount(); ++i) {
                   const auto* folder =
                     folders.at(i).value<qml_components::RootSongFolder*>();
                   if (folder != nullptr && folder->getName() == canonical) {
-                      scanningQueue.scan(
-                        const_cast<qml_components::RootSongFolder*>(folder));
+                      auto* mutableFolder =
+                        const_cast<qml_components::RootSongFolder*>(folder);
+                      if (subdir.isEmpty() ||
+                          !scanningQueue.scanSubfolder(mutableFolder, subdir)) {
+                          scanningQueue.scan(mutableFolder);
+                      }
                       break;
                   }
               }

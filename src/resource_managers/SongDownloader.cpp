@@ -140,7 +140,8 @@ namespace {
 auto
 extractArchive(const QString& archivePath,
                const QString& destDir,
-               QString& error) -> bool
+               QString& error,
+               QString& firstTopLevel) -> bool
 {
     auto* reader = archive_read_new();
     archive_read_support_format_all(reader);
@@ -191,6 +192,16 @@ extractArchive(const QString& archivePath,
             continue;
         }
         const auto full = destDir + '/' + clean;
+        // Remember a single top-level directory so the caller can rescan
+        // just the new songs instead of the whole downloads folder.
+        // Archives spreading files across several top-level entries fall
+        // back to a full rescan (empty firstTopLevel).
+        const auto top = clean.section('/', 0, 0);
+        if (firstTopLevel.isEmpty()) {
+            firstTopLevel = top;
+        } else if (firstTopLevel != top) {
+            firstTopLevel.clear();
+        }
         if (archive_entry_filetype(entry) == AE_IFDIR) {
             QDir{}.mkpath(full);
             continue;
@@ -661,11 +672,14 @@ resource_managers::SongDownloader::startExtraction(int row,
     fileOperationThreadPool.start(
       [this, row, archivePath, dest = downloadLocation.path()] {
           auto error = QString{};
-          const auto ok = extractArchive(archivePath, dest, error);
+          auto topDir = QString{};
+          const auto ok = extractArchive(archivePath, dest, error, topDir);
+          const auto subdir =
+            topDir.isEmpty() ? QString{} : dest + '/' + topDir;
           QMetaObject::invokeMethod(
             this,
-            [this, row, archivePath, ok, error] {
-                finishExtraction(row, ok, error);
+            [this, row, archivePath, ok, error, subdir] {
+                finishExtraction(row, ok, error, subdir);
             },
             Qt::QueuedConnection);
       });
@@ -674,7 +688,8 @@ resource_managers::SongDownloader::startExtraction(int row,
 void
 resource_managers::SongDownloader::finishExtraction(int row,
                                                     bool ok,
-                                                    const QString& error)
+                                                    const QString& error,
+                                                    const QString& subdir)
 {
     if (row < 0 || row >= tasks.size() || phases[row] != Phase::ExtractActive) {
         pump();
@@ -694,7 +709,7 @@ resource_managers::SongDownloader::finishExtraction(int row,
     phases[row] = Phase::Done;
     notifyRow(row);
     emit taskFinished(tasks[row].name);
-    emit extractionFinished(downloadLocation.path());
+    emit extractionFinished(downloadLocation.path(), subdir);
     pump();
 }
 void

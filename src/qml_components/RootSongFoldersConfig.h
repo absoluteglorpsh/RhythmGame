@@ -79,7 +79,14 @@ class ScanningQueue final : public QAbstractListModel
     Q_PROPERTY(QString currentScannedFolder READ getCurrentScannedFolder NOTIFY
                  currentScannedFolderChanged)
     QString currentScannedFolder;
-    std::deque<QSharedPointer<RootSongFolder>> scanItems;
+    struct ScanTask
+    {
+        QSharedPointer<RootSongFolder> folder;
+        // Directory to (re)scan; usually the folder itself, or a subfolder
+        // of it (e.g. freshly extracted songs) for a targeted rescan.
+        QString path;
+    };
+    std::deque<ScanTask> scanItems;
     QFuture<void> scanFuture;
     QFutureWatcher<void> scanFutureWatcher;
     std::atomic_bool stop{ false };
@@ -107,6 +114,14 @@ class ScanningQueue final : public QAbstractListModel
     Q_INVOKABLE void remove(int index);
     Q_INVOKABLE QVariant at(int index) const;
     Q_INVOKABLE bool scan(RootSongFolder* which);
+    /**
+     * @brief Rescans a single subfolder of an already registered root.
+     * @details Used after extracting downloaded songs: only the new content
+     * is cleared and scanned instead of the whole root. Returns false when
+     * the path is not an existing directory inside a registered root.
+     */
+    Q_INVOKABLE bool scanSubfolder(RootSongFolder* root,
+                                   const QString& subPath);
     auto getCurrentScannedFolder() const -> QString;
 
   signals:

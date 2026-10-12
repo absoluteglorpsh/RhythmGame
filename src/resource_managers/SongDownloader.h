@@ -196,7 +196,10 @@ class SongDownloader final : public QAbstractListModel
     void startDownload(int row);
     void startExtraction(int row, const QString& archivePath);
     void updateActivity();
-    void finishExtraction(int row, bool ok, const QString& error);
+    void finishExtraction(int row,
+                          bool ok,
+                          const QString& error,
+                          const QString& subdir);
     void failTask(int row, const QString& error, bool notify = true);
     [[nodiscard]] auto findRowByUrl(const QString& url) const -> int;
     [[nodiscard]] auto isOwned(const QString& md5) -> bool;
@@ -256,11 +259,14 @@ class SongDownloader final : public QAbstractListModel
     void taskFailed(const QString& name, const QString& errorMessage);
     /**
      * @brief Emitted with the downloads folder path after an extraction.
-     * @details The caller is expected to register the folder as a song root
-     * and rescan it; this mirrors the reference `main.updateSong(dir, true)`
-     * step without coupling the downloader to the folder configuration.
+     * @details subdir is the extracted top-level directory when the package
+     * held exactly one, so the caller can rescan just the new songs;
+     * otherwise it is empty and the whole folder needs rescanning. This
+     * mirrors the reference `main.updateSong(dir, true)` step without
+     * coupling the downloader to the folder configuration.
      */
-    void extractionFinished(const QString& downloadDirPath);
+    void extractionFinished(const QString& downloadDirPath,
+                            const QString& extractedSubdir);
 };
 
 } // namespace resource_managers

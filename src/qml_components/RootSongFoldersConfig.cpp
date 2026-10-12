@@ -92,7 +92,7 @@ ScanningQueue::at(const int index) const
     if (index < 0 || index >= scanItems.size()) {
         return QVariant{};
     }
-    return QVariant::fromValue(scanItems[index].get());
+    return QVariant::fromValue(scanItems[index].folder.get());
 }
 auto
 ScanningQueue::scan(RootSongFolder* which) -> bool
@@ -106,11 +106,57 @@ ScanningQueue::scan(RootSongFolder* which) -> bool
                       which->getName().toStdString());
         return false;
     }
-    if (std::ranges::find(scanItems, shared) != scanItems.end()) {
-        return false;
+    for (const auto& task : scanItems) {
+        if (task.folder == shared) {
+            return false;
+        }
     }
     beginInsertRows(QModelIndex(), scanItems.size(), scanItems.size());
-    scanItems.push_back(std::move(shared));
+    scanItems.push_back(
+      ScanTask{ .folder = std::move(shared), .path = which->getName() });
+    endInsertRows();
+    if (scanItems.size() == 1) {
+        performTask();
+    }
+    return true;
+}
+auto
+ScanningQueue::scanSubfolder(RootSongFolder* root, const QString& subPath)
+  -> bool
+{
+    if (root == nullptr) {
+        return false;
+    }
+    const auto rootName = root->getName();
+    const auto info = QFileInfo{ subPath };
+    if (!info.isDir()) {
+        return false;
+    }
+    auto canonical = QDir{ subPath }.canonicalPath();
+    if (canonical.isEmpty()) {
+        return false;
+    }
+    if (!canonical.endsWith('/')) {
+        canonical += '/';
+    }
+    if (!canonical.startsWith(rootName)) {
+        spdlog::error("Attempted to scan {} outside of song root {}",
+                      canonical.toStdString(),
+                      rootName.toStdString());
+        return false;
+    }
+    if (canonical == rootName) {
+        return scan(root);
+    }
+    auto shared = root->sharedFromThis();
+    for (const auto& task : scanItems) {
+        if (task.folder == shared) {
+            return false;
+        }
+    }
+    beginInsertRows(QModelIndex(), scanItems.size(), scanItems.size());
+    scanItems.push_back(
+      ScanTask{ .folder = std::move(shared), .path = canonical });
     endInsertRows();
     if (scanItems.size() == 1) {
         performTask();
@@ -257,13 +303,14 @@ ScanningQueue::ScanningQueue(db::SqliteCppDb* db,
     connect(&scanFutureWatcher, &QFutureWatcher<void>::finished, [this] {
         // fixme: what if we press stop between scanning is finished and this
         // line?
-        scanItems.front()->updateStatus(stop
-                                          ? RootSongFolder::Status::NotScanned
-                                          : RootSongFolder::Status::Scanned);
+        scanItems.front().folder->updateStatus(
+          stop ? RootSongFolder::Status::NotScanned
+               : RootSongFolder::Status::Scanned);
         updateStatus.reset();
-        updateStatus.bind(":dir", scanItems.front()->getName().toStdString());
-        updateStatus.bind(":status",
-                          static_cast<int>(scanItems.front()->getStatus()));
+        updateStatus.bind(":dir",
+                          scanItems.front().folder->getName().toStdString());
+        updateStatus.bind(
+          ":status", static_cast<int>(scanItems.front().folder->getStatus()));
         updateStatus.execute();
         stop = false;
         beginRemoveRows(QModelIndex(), 0, 0);
@@ -280,13 +327,13 @@ ScanningQueue::ScanningQueue(db::SqliteCppDb* db,
 void
 ScanningQueue::performTask()
 {
-    const auto& folder = scanItems.front();
-    folder->updateStatus(RootSongFolder::Status::InProgress);
+    const auto& task = scanItems.front();
+    task.folder->updateStatus(RootSongFolder::Status::InProgress);
     updateStatus.reset();
-    updateStatus.bind(":dir", folder->getName().toStdString());
-    updateStatus.bind(":status", static_cast<int>(folder->getStatus()));
+    updateStatus.bind(":dir", task.folder->getName().toStdString());
+    updateStatus.bind(":status", static_cast<int>(task.folder->getStatus()));
     updateStatus.execute();
-    scanImpl(folder->getName());
+    scanImpl(task.path);
 }
 void
 ScanningQueue::remove(const int index)
@@ -385,7 +432,7 @@ ScanningQueue::data(const QModelIndex& index, int role) const -> QVariant
 {
     if (role == Qt::DisplayRole && index.row() < scanItems.size() &&
         index.row() >= 0) {
-        return QVariant::fromValue(scanItems[index.row()].get());
+        return QVariant::fromValue(scanItems[index.row()].folder.get());
     }
     return QVariant{};
 }
