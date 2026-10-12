@@ -117,34 +117,4 @@ Image {
             Qt.callLater(() => pathView.controller.goForward(modelData));
         }
     }
-    Rectangle {
-        id: downloadChip
-
-        visible: image.isMissing
-        anchors.right: parent.right
-        anchors.rightMargin: 8
-        anchors.verticalCenter: parent.verticalCenter
-        width: downloadLabel.implicitWidth + 20
-        height: 36
-        radius: 6
-        color: palette.highlight
-
-        Text {
-            id: downloadLabel
-
-            anchors.centerIn: parent
-            text: qsTr("Download")
-            color: palette.highlightedText
-            font.pixelSize: 14
-        }
-        MouseArea {
-            anchors.fill: parent
-            onClicked: (mouse) => {
-                mouse.accepted = true;
-                pathView.forceActiveFocus();
-                pathView.setNavigationImmediate(index);
-                Rg.songDownloader.submitMd5(modelData.md5, modelData.title || "");
-            }
-        }
-    }
 }

@@ -802,6 +802,28 @@ FocusScope {
                 anchors.topMargin: 20
                 generalVars: Rg.profileList.mainProfile.vars.generalVars
             }
+            Image {
+                id: downloadMissingButton
+
+                // Tucked closer to Sort: the button stack would otherwise
+                // land on top of the banner below.
+                anchors.left: sortButton.left
+                anchors.top: sortButton.bottom
+                anchors.topMargin: 8
+                source: root.iniImagesUrl + "option.png/button_big"
+
+                Text {
+                    anchors.centerIn: parent
+                    color: "black"
+                    font.pixelSize: 20
+                    text: qsTr("Download missing")
+                }
+                MouseArea {
+                    anchors.fill: parent
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: root.downloadAllMissing()
+                }
+            }
             MouseArea {
                 id: focusList
 
