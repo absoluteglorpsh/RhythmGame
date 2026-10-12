@@ -33,6 +33,7 @@ FocusScope {
         readonly property var themeVars: (Rg.profileList.mainProfile.vars.themeVars.select || {})[QmlUtils.themeName] || ({})
         readonly property int replayType: replayTypeIndex(generalVars ? generalVars.replayType : 0)
         property bool pendingDownloadRefresh: false
+        property string pendingFocusMd5: ""
         property string downloadNotice: ""
 
         function showDownloadNotice(text) {
@@ -191,7 +192,11 @@ FocusScope {
             // mirroring endlessdream (single missing chart, or every
             // missing chart when attempting a course).
             if (target instanceof entry) {
-                return Rg.songDownloader.submitMd5(target.md5, target.title || "");
+                const submitted = Rg.songDownloader.submitMd5(target.md5, target.title || "");
+                if (submitted) {
+                    root.pendingFocusMd5 = target.md5;
+                }
+                return submitted;
             }
             if (target instanceof course) {
                 let submitted = false;
@@ -204,6 +209,7 @@ FocusScope {
         }
 
         function downloadAllMissing() {
+            root.pendingFocusMd5 = "";
             Rg.songDownloader.submitEntries(songList.folderContents || []);
             return true;
         }
@@ -641,6 +647,21 @@ FocusScope {
                     if (root.pendingDownloadRefresh) {
                         root.pendingDownloadRefresh = false;
                         songList.controller.refreshCurrentFolder();
+                        if (root.pendingFocusMd5 !== "") {
+                            const wanted = root.pendingFocusMd5.toUpperCase();
+                            root.pendingFocusMd5 = "";
+                            // NOTE: search the presentation rows, not the raw
+                            // folder contents: sorting, filtering, and the
+                            // circular adapter all change positions.
+                            const rows = songList.model || [];
+                            for (let i = 0; i < rows.length; ++i) {
+                                if (rows[i]
+                                        && String(rows[i].md5 || "").toUpperCase() === wanted) {
+                                    songList.setNavigationImmediate(i);
+                                    break;
+                                }
+                            }
+                        }
                     }
                 }
             }

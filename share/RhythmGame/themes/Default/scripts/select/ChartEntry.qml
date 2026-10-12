@@ -111,7 +111,9 @@ Image {
             // Attempting to open a missing table song starts its download,
             // mirroring endlessdream's in-game downloader.
             if (image.isMissing) {
-                Rg.songDownloader.submitMd5(modelData.md5, modelData.title || "");
+                if (Rg.songDownloader.submitMd5(modelData.md5, modelData.title || "")) {
+                    root.pendingFocusMd5 = modelData.md5;
+                }
                 return;
             }
             Qt.callLater(() => pathView.controller.goForward(modelData));
