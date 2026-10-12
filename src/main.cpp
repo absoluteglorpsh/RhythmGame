@@ -517,14 +517,18 @@ main(int argc, [[maybe_unused]] char* argv[]) -> int
         auto tables = resource_managers::Tables{ &networkManager,
                                                  dataFolder / "tables",
                                                  &db };
-
-        auto songDownloader = resource_managers::SongDownloader{
-            &networkManager, dataFolder / "downloads", &db
-        };
+        auto songDownloader =
+          resource_managers::SongDownloader{ &networkManager, dataFolder, &db };
+        songDownloader.setDownloadLocation(profileList.getMainProfile()
+                                             ->getVars()
+                                             ->getGeneralVars()
+                                             ->getDownloadDirectory());
         // Keep the managed downloads folder registered as a song root and
         // rescan it after every extraction, mirroring the reference
         // main.updateSong(downloadDir, true) step. Single-directory
         // packages rescan just their folder instead of the whole root.
+        // A custom download folder nested inside another root rescans
+        // through that containing root instead.
         QObject::connect(
           &songDownloader,
           &resource_managers::SongDownloader::extractionFinished,
@@ -532,18 +536,34 @@ main(int argc, [[maybe_unused]] char* argv[]) -> int
           [&](const QString& path, const QString& subdir) {
               folders.add(path);
               const auto canonical = path.endsWith('/') ? path : path + '/';
+              const auto scanTarget = subdir.isEmpty() ? canonical : subdir;
+              const auto* container =
+                static_cast<qml_components::RootSongFolder*>(nullptr);
+              auto bestLength = -1;
               for (auto i = 0; i < folders.rowCount(); ++i) {
                   const auto* folder =
                     folders.at(i).value<qml_components::RootSongFolder*>();
-                  if (folder != nullptr && folder->getName() == canonical) {
-                      auto* mutableFolder =
-                        const_cast<qml_components::RootSongFolder*>(folder);
-                      if (subdir.isEmpty() ||
-                          !scanningQueue.scanSubfolder(mutableFolder, subdir)) {
-                          scanningQueue.scan(mutableFolder);
-                      }
-                      break;
+                  if (folder == nullptr) {
+                      continue;
                   }
+                  const auto name = folder->getName().toLower();
+                  if ((scanTarget.toLower() == name ||
+                       scanTarget.toLower().startsWith(name)) &&
+                      name.size() > bestLength) {
+                      container = folder;
+                      bestLength = name.size();
+                  }
+              }
+              if (container == nullptr) {
+                  return;
+              }
+              auto* mutableFolder =
+                const_cast<qml_components::RootSongFolder*>(container);
+              if (container->getName() == canonical && subdir.isEmpty()) {
+                  scanningQueue.scan(mutableFolder);
+              } else if (!scanningQueue.scanSubfolder(mutableFolder,
+                                                      scanTarget)) {
+                  scanningQueue.scan(mutableFolder);
               }
           });
 

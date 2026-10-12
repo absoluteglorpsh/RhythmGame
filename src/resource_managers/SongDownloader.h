@@ -154,6 +154,10 @@ class SongDownloader final : public QAbstractListModel
     Q_PROPERTY(int count READ getCount NOTIFY countChanged)
     Q_PROPERTY(bool busy READ isBusy NOTIFY busyChanged)
     Q_PROPERTY(QString activeName READ getActiveName NOTIFY activityChanged)
+    Q_PROPERTY(QString downloadLocation READ getDownloadLocation WRITE
+                 setDownloadLocation NOTIFY downloadLocationChanged)
+    Q_PROPERTY(QString defaultDownloadLocation READ getDefaultDownloadLocation
+                 CONSTANT)
     Q_PROPERTY(int activeStatus READ getActiveStatus NOTIFY activityChanged)
     Q_PROPERTY(qint64 activeReceived READ getActiveReceived NOTIFY
                  activityChanged)
@@ -161,6 +165,7 @@ class SongDownloader final : public QAbstractListModel
                  activityChanged)
 
     QNetworkAccessManager* networkManager;
+    QDir baseLocation;
     QDir downloadLocation;
     db::SqliteCppDb* db;
     db::SqliteCppDb::Statement ownedCheck;
@@ -207,7 +212,7 @@ class SongDownloader final : public QAbstractListModel
 
   public:
     explicit SongDownloader(QNetworkAccessManager* networkManager,
-                            const QDir& downloadLocation,
+                            const QDir& baseLocation,
                             db::SqliteCppDb* db,
                             QObject* parent = nullptr);
     auto rowCount(const QModelIndex& parent = QModelIndex()) const
@@ -225,9 +230,9 @@ class SongDownloader final : public QAbstractListModel
     /**
      * @brief Queues downloads for every missing song in a level listing.
      * @details Accepts the mixed `ChartData*`/`Entry` list returned by
-     * `Level::loadCharts()` (or `Level::entries`); owned charts and plain
-     * md5 strings are handled, everything else is ignored. Mirrors the
-     * reference "Fill Missing Charts" action.
+     * `Level::loadCharts()` (or `Level::entries`); only table entries carry
+     * an md5, everything else is ignored. Mirrors the reference "Fill
+     * Missing Charts" action.
      */
     Q_INVOKABLE void submitEntries(const QVariantList& items);
     /**
@@ -249,12 +254,29 @@ class SongDownloader final : public QAbstractListModel
     }
     auto getActiveReceived() const -> qint64 { return activeReceived; }
     auto getActiveTotal() const -> qint64 { return activeTotal; }
+    auto getDownloadLocation() const -> QString
+    {
+        return downloadLocation.path();
+    }
+    void setDownloadLocation(const QString& path);
+    auto getDefaultDownloadLocation() const -> QString
+    {
+        return baseLocation.filePath(QStringLiteral("downloads"));
+    }
+    /**
+     * @brief Resolves a configured download folder against the base folder.
+     * @details Empty means the managed default inside the base folder;
+     * relative paths resolve against it; absolute paths pass through.
+     */
+    static auto resolveDownloadLocation(const QDir& base,
+                                        const QString& configured) -> QDir;
 
   signals:
     void sourceChanged();
     void countChanged();
     void busyChanged();
     void activityChanged();
+    void downloadLocationChanged();
     void taskFinished(const QString& name);
     void taskFailed(const QString& name, const QString& errorMessage);
     /**

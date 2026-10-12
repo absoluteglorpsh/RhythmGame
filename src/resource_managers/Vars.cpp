@@ -990,6 +990,25 @@ resource_managers::GeneralVars::resetDownloadSource()
 {
     setDownloadSource(defaultDownloadSource);
 }
+auto
+resource_managers::GeneralVars::getDownloadDirectory() const -> QString
+{
+    return downloadDirectory;
+}
+void
+resource_managers::GeneralVars::setDownloadDirectory(const QString& value)
+{
+    if (downloadDirectory == value) {
+        return;
+    }
+    downloadDirectory = value;
+    emit downloadDirectoryChanged();
+}
+void
+resource_managers::GeneralVars::resetDownloadDirectory()
+{
+    setDownloadDirectory({});
+}
 namespace {
 void
 writeGeneralVars(QThreadPool& writePool,

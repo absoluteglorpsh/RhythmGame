@@ -253,12 +253,13 @@ extractArchive(const QString& archivePath,
 
 resource_managers::SongDownloader::SongDownloader(
   QNetworkAccessManager* networkManager,
-  const QDir& downloadLocation,
+  const QDir& baseLocation,
   db::SqliteCppDb* db,
   QObject* parent)
   : QAbstractListModel(parent)
   , networkManager(networkManager)
-  , downloadLocation(downloadLocation)
+  , baseLocation(baseLocation)
+  , downloadLocation(resolveDownloadLocation(baseLocation, {}))
   , db(db)
   , ownedCheck(
       db->createStatement("SELECT COUNT(*) FROM charts WHERE md5 = :md5"))
@@ -280,6 +281,37 @@ resource_managers::SongDownloader::SongDownloader(
             QFile::remove(downloadLocation.filePath(leftover));
         }
     }
+}
+
+auto
+resource_managers::SongDownloader::resolveDownloadLocation(
+  const QDir& base,
+  const QString& configured) -> QDir
+{
+    const auto trimmed = configured.trimmed();
+    if (trimmed.isEmpty()) {
+        return QDir{ base.filePath(QStringLiteral("downloads")) };
+    }
+    if (QDir::isRelativePath(trimmed)) {
+        return QDir{ base.filePath(trimmed) };
+    }
+    return QDir{ trimmed };
+}
+
+void
+resource_managers::SongDownloader::setDownloadLocation(const QString& path)
+{
+    const auto resolved = resolveDownloadLocation(baseLocation, path);
+    if (resolved == downloadLocation) {
+        return;
+    }
+    if (!QDir{}.mkpath(resolved.path())) {
+        spdlog::error("Failed to create folder for song downloads: {}",
+                      resolved.path().toStdString());
+        return;
+    }
+    downloadLocation = resolved;
+    emit downloadLocationChanged();
 }
 
 auto

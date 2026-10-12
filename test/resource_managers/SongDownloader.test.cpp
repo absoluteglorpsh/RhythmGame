@@ -119,3 +119,16 @@ TEST_CASE("other download URLs pass through untouched")
             .toString() ==
           "https://pixeldrain.net/api/filesystem/abc123/pack.7z");
 }
+
+TEST_CASE("download location resolves against the data folder")
+{
+    using resource_managers::SongDownloader;
+    const auto base = QDir{ QStringLiteral("/data") };
+    CHECK(SongDownloader::resolveDownloadLocation(base, {}).path() ==
+          "/data/downloads");
+    CHECK(SongDownloader::resolveDownloadLocation(base, "packs").path() ==
+          "/data/packs");
+    CHECK(
+      SongDownloader::resolveDownloadLocation(base, "/media/songs").path() ==
+      "/media/songs");
+}

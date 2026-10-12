@@ -27,9 +27,14 @@ Item {
 
     Component.onCompleted: {
         fetchTables()
-        const saved = Rg.profileList?.mainProfile?.vars?.generalVars?.downloadSource
-        if (saved && Rg.songDownloader.availableSources().includes(saved)) {
-            Rg.songDownloader.source = saved
+        const generalVars = Rg.profileList?.mainProfile?.vars?.generalVars
+        const savedSource = generalVars?.downloadSource
+        if (savedSource && Rg.songDownloader.availableSources().includes(savedSource)) {
+            Rg.songDownloader.source = savedSource
+        }
+        if (generalVars) {
+            Rg.songDownloader.downloadLocation = generalVars.downloadDirectory || ""
+            downloadFolderField.text = generalVars.downloadDirectory || ""
         }
     }
     Component.onDestruction: cancelFetch()
@@ -82,6 +87,26 @@ Item {
                 Rg.songDownloader.submitEntries(lvl.entries)
             }
         }
+    }
+
+    function localFilePath(url) {
+        const text = String(url)
+        if (!/^file:\/\//i.test(text)) {
+            return text
+        }
+        let path = decodeURIComponent(text.replace(/^file:\/\//i, ""))
+        if (/^\/[A-Za-z]:/.test(path)) {
+            path = path.slice(1)
+        }
+        return path
+    }
+
+    function setDownloadFolder(url) {
+        const path = tableSettings.localFilePath(url)
+        const generalVars = Rg.profileList.mainProfile.vars.generalVars
+        generalVars.downloadDirectory = path
+        Rg.songDownloader.downloadLocation = path
+        downloadFolderField.text = path
     }
 
     function currentTableListUrl() {
@@ -927,7 +952,14 @@ Item {
             title: qsTr("Song downloads")
             subtitle: qsTr("Fetch missing table songs through a package service. Archives extract into the managed downloads folder, which rescans automatically.")
             Layout.fillWidth: true
-            Layout.preferredHeight: 320
+            Layout.preferredHeight: 380
+
+            FolderDialog {
+                id: downloadFolderDialog
+
+                title: qsTr("Choose downloads folder")
+                onAccepted: tableSettings.setDownloadFolder(selectedFolder)
+            }
 
             RowLayout {
                 Layout.fillWidth: true
@@ -958,6 +990,42 @@ Item {
                     ToolTip.visible: hovered
                     ToolTip.delay: 500
                     onClicked: tableSettings.downloadAllMissingFromTables()
+                }
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 8
+
+                Label { text: qsTr("Folder:") }
+
+                TextField {
+                    id: downloadFolderField
+
+                    Layout.fillWidth: true
+                    placeholderText: Rg.songDownloader.defaultDownloadLocation
+                    onEditingFinished: {
+                        tableSettings.setDownloadFolder(text)
+                    }
+                }
+
+                ActionButton {
+                    text: qsTr("Browse…")
+                    tone: ActionButton.Secondary
+                    onClicked: downloadFolderDialog.open()
+                }
+
+                ActionButton {
+                    text: qsTr("Reset")
+                    tone: ActionButton.Secondary
+                    // NOTE: property reset methods are not QML-invokable,
+                    // so reset by assigning the default (empty) value.
+                    onClicked: {
+                        const generalVars = Rg.profileList.mainProfile.vars.generalVars
+                        generalVars.downloadDirectory = ""
+                        Rg.songDownloader.downloadLocation = ""
+                        downloadFolderField.text = ""
+                    }
                 }
             }
 

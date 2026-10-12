@@ -440,6 +440,15 @@ class GeneralVars final : public QObject
                  setDownloadSource NOTIFY downloadSourceChanged RESET
                    resetDownloadSource)
     /**
+     * @brief Download folder override for missing table songs.
+     * @details Empty means the managed default inside the data folder.
+     * Absolute paths are used as-is; relative paths resolve against the
+     * data folder.
+     */
+    Q_PROPERTY(QString downloadDirectory READ getDownloadDirectory WRITE
+                 setDownloadDirectory NOTIFY downloadDirectoryChanged RESET
+                   resetDownloadDirectory)
+    /**
      * @brief Preferred online ranking provider.
      */
     Q_PROPERTY(qml_components::OnlineRankingModel::Provider rankingProvider READ
@@ -492,6 +501,7 @@ class GeneralVars final : public QObject
     inline static const QString defaultDownloadSource =
       QStringLiteral("ginger");
     QString downloadSource = defaultDownloadSource;
+    QString downloadDirectory;
     qml_components::OnlineRankingModel::Provider rankingProvider =
       qml_components::OnlineRankingModel::Provider::RhythmGame;
 
@@ -609,6 +619,9 @@ class GeneralVars final : public QObject
     auto getDownloadSource() const -> QString;
     void setDownloadSource(const QString& value);
     void resetDownloadSource();
+    auto getDownloadDirectory() const -> QString;
+    void setDownloadDirectory(const QString& value);
+    void resetDownloadDirectory();
     auto getRankingProvider() const
       -> qml_components::OnlineRankingModel::Provider;
     void setRankingProvider(qml_components::OnlineRankingModel::Provider value);
@@ -652,6 +665,7 @@ class GeneralVars final : public QObject
     void soundsetPathChanged();
     void tableListUrlChanged();
     void downloadSourceChanged();
+    void downloadDirectoryChanged();
     void rankingProviderChanged();
 };
 
