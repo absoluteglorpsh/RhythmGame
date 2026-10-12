@@ -675,6 +675,12 @@ resource_managers::Tables::reload(int index)
         return;
     }
     spdlog::info("Reloading table: {}", table.url.toString().toStdString());
+    // Reset parsed state: handleHeader/handleData below append to the
+    // level and course lists, so reloading into the existing object would
+    // duplicate every entry.
+    const auto url = table.url;
+    table = Table{};
+    table.url = url;
     table.status = Table::Loading;
     const QNetworkRequest request(table.url);
     auto* reply = networkManager->get(request);

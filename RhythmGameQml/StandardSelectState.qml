@@ -400,9 +400,29 @@ Item {
         return true;
     }
 
+    /*!
+        Re-resolves the current folder, table level, or search without
+        refetching anything over the network. Use after the local library
+        changed (e.g. a rescan finished) to show fresh contents. Returns
+        whether the view was updated.
+    */
+    function refreshCurrentFolder() {
+        if (root.historyStack.length === 0) {
+            return false;
+        }
+        let old = focusedItem;
+        let folder = selectionState.open(
+            historyStack[historyStack.length - 1]);
+        if (folder === null) {
+            return false;
+        }
+        let index = selectionState.indexOfEntry(folder, old);
+        selectionState.requestFocus(index >= 0 ? index : 0);
+        return true;
+    }
+
     /*! Reloads the current local folder or online table. */
-    function reloadCurrentFolderOrTable() {
-        if (reloadAction.reload(root.focusedItem, root.historyStack,
+    function reloadCurrentFolderOrTable() {        if (reloadAction.reload(root.focusedItem, root.historyStack,
                                 selectionState.selectedSongFolderPath())) {
             return true;
         }

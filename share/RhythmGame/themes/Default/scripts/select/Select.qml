@@ -640,7 +640,7 @@ FocusScope {
                 function onQueueDrained() {
                     if (root.pendingDownloadRefresh) {
                         root.pendingDownloadRefresh = false;
-                        songList.controller.reloadCurrentFolderOrTable();
+                        songList.controller.refreshCurrentFolder();
                     }
                 }
             }
